@@ -1,5 +1,6 @@
 package com.sebastianrask.bettersubscription.tasks;
 
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.util.Log;
 
@@ -98,14 +99,16 @@ public class GetLiveStreamURL extends AsyncTask<String, Void, HashMap<String, St
 			e.printStackTrace();
 		}
 
-		String streamUrl = String.format("http://usher.twitch.tv/api/channel/hls/%s.m3u8" +
-												 "?player=twitchweb&" +
-												 "&token=%s" +
-												 "&sig=%s" +
-												 "&allow_audio_only=true" +
-												 "&allow_source=true" +
-												 "&type=any" +
-												 "&p=%s", streamerName, tokenString, sig, "" + new Random().nextInt(6));
+		final String streamUrl = Uri.parse(String.format("http://usher.twitch.tv/api/channel/hls/%s.m3u8", streamerName))
+				.buildUpon()
+				.appendQueryParameter("player", "twitchweb")
+				.appendQueryParameter("token", tokenString)
+				.appendQueryParameter("sig", sig)
+				.appendQueryParameter("allow_audio_only", "true")
+				.appendQueryParameter("allow_source", "true")
+				.appendQueryParameter("type", "any")
+				.appendQueryParameter("p", String.valueOf(new Random().nextInt(6)))
+				.build().toString();
 
 		Log.d(LOG_TAG, "HSL Playlist URL: " + streamUrl);
 		return parseM3U8(streamUrl);

@@ -1268,6 +1268,11 @@ public class StreamFragment extends Fragment {
      */
     private void playbackFailed() {
         mBufferingView.stop();
+
+        // Zero out qualityURLs in order to force the next attempt to stream
+        // to re-fetch the stream URLs
+        qualityURLs = null;
+
         if (vodId == null) {
             showSnackbar(getString(R.string.stream_playback_failed), SNACKBAR_SHOW_DURATION);
         } else {
@@ -1449,6 +1454,10 @@ public class StreamFragment extends Fragment {
         qualityView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                // We zero out qualityURLs here in order to force a refresh
+                // of all of the stream URLs, any time we re-select the quality
+                qualityURLs = null;
+
                 String quality = supportedQualities.get(qualityView.getText());
                 settings.setPrefStreamQuality(quality);
                 startStreamWithQuality(quality);
