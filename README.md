@@ -7,10 +7,11 @@ It differs in these basic ways:
 - No Google Play services reliance. This means Chromecast support is gone.
 - Google Analytics stripped out.
 - Crashlytics stripped out.
-- Doesn't leak OAuth Client ID to random parked domain
+- Doesn't leak OAuth access token to random parked domain
 - Notification support removed
 - Donation prompt removed (if you like, install the original and donate to the author that way, they deserve it)
 - Made a few mb leaner by stripping unused resources
+- Support global and channel badges (e.g. subscription streaks)
 
 It is not published on any app stores.
 
