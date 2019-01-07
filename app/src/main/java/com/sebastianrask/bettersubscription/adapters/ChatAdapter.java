@@ -87,69 +87,47 @@ public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.ContactViewHol
 	public void onBindViewHolder(final ContactViewHolder holder, int position) {
 		try {
 			final ChatMessage message = messages.get(position);
-			if (message.getMessage().equals("Test")) {
-				Log.d(LOG_TAG, "Binding Message for user");
-				Log.d(LOG_TAG, "Message: " + message.toString());
-			}
-
-			final SpannableStringBuilder builder = new SpannableStringBuilder();
-
-			for (final ChatBadge badge : message.getBadges()) {
-				builder.append("  ")
-						.setSpan(new ImageSpan(context, badge.getBitmap(), emoteAlignment),
-								builder.length() - 2, builder.length() - 1, 0);
-			}
-
 			if (message.getName() == null) {
 				return;
 			}
 
+			final SpannableStringBuilder builder = new SpannableStringBuilder();
+
+			// Append all chat badges
+			for (final ChatBadge badge : message.getBadges()) {
+				builder.append("  ");
+				builder.setSpan(new ImageSpan(context, badge.getBitmap(), emoteAlignment),
+						builder.length() - 2, builder.length() - 1, 0);
+			}
+
+			// Append chatter name
 			builder.append(message.getName());
-			int nameColor = getNameColor(message.getColor());
+			final int nameColor = getNameColor(message.getColor());
 			builder.setSpan(new ForegroundColorSpan(nameColor), 0, builder.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
 
-			String messageWithPre = PREMESSAGE + message.getMessage();
+			// Append message with leading :
+			final String messageWithPre = PREMESSAGE + message.getMessage();
 			final SpannableStringBuilder resultMessage = new SpannableStringBuilder(messageWithPre);
-			resultMessage.setSpan(new ForegroundColorSpan(getMessageColor()), 0, resultMessage.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+			resultMessage.setSpan(new ForegroundColorSpan(getMessageColor()),
+					0, resultMessage.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
 
+			// Append clickable spans for any links
 			checkForLink(messageWithPre, resultMessage);
 
+			// Replace any emotes
 			for(ChatEmote emote : message.getEmotes()) {
 				for(String emotePosition : emote.getEmotePositions()) {
-					String[] toAndFrom = emotePosition.split("-");
+					final String[] toAndFrom = emotePosition.split("-");
 					final int fromPosition = Integer.parseInt(toAndFrom[0]);
 					final int toPosition = Integer.parseInt(toAndFrom[1]);
 
-
 					final ImageSpan emoteSpan = new ImageSpan(context, emote.getEmoteBitmap(), emoteAlignment);
-					resultMessage.setSpan(emoteSpan, fromPosition + PREMESSAGE.length(), toPosition + 1 + PREMESSAGE.length(), Spanned.SPAN_INCLUSIVE_INCLUSIVE);
+					resultMessage.setSpan(emoteSpan,
+							fromPosition + PREMESSAGE.length(),
+							toPosition + 1 + PREMESSAGE.length(),
+							Spanned.SPAN_INCLUSIVE_INCLUSIVE);
 
 					holder.message.setTextIsSelectable(true);
-
-					/*
-					if (BuildConfig.DEBUG && false) {
-						Glide
-								.with(context)
-								.load("https://cdn.betterttv.net/emote/561c1cb4f291bd650621b2c5/2x")
-								.asGif()
-								.into(new SimpleTarget<GifDrawable>() {
-									@Override
-									public void onResourceReady(GifDrawable gifDrawable, GlideAnimation<? super GifDrawable> glideAnimation) {
-										gifDrawable.setBounds(0, 0, gifDrawable.getIntrinsicWidth(), gifDrawable.getIntrinsicHeight());
-										gifDrawable.setCallback(ChatAdapter.this);
-
-										final SpannableStringBuilder ssb = new SpannableStringBuilder("test\ufffc");
-
-										ssb.setSpan(new ImageSpan(gifDrawable), ssb.length() - 1, ssb.length(), 0);
-										holder.message.setText(ssb);
-										gifDrawable.stop();
-										gifDrawable.start();
-										Log.d(LOG_TAG, "Gif frames: " + gifDrawable.getFrameCount());
-										//Log.d(LOG_TAG, "Setting GIF");
-									}
-								});
-					}
-					*/
 				}
 			}
 

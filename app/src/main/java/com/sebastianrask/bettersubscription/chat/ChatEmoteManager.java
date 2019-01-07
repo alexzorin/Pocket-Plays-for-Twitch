@@ -51,7 +51,6 @@ public class ChatEmoteManager {
     private final Map<String, Badge> badgesChannel = new HashMap();
 
     private Pattern bttvEmotesPattern = Pattern.compile("");
-    private Pattern emotePattern = Pattern.compile("(\\d+):((?:\\d+-\\d+,?)+)");
 
     private Settings settings;
     private Context context;
@@ -250,18 +249,30 @@ public class ChatEmoteManager {
     }
 
     /**
-     * Finds and creates Twitch emotes in an unsplit irc line.
-     * @param message The line to find emotes in
+     * Finds and creates Twitch emotes according to the IRCv3 emote tag.
+     * @param emoteTag The emotes tag value
      * @return The list of emotes from the line
      */
-    protected List<ChatEmote> findTwitchEmotes(String message) {
+    protected List<ChatEmote> findTwitchEmotes(final String emoteTag) {
         List<ChatEmote> emotes = new ArrayList<>();
-        Matcher emoteMatcher = emotePattern.matcher(message);
+        if (emoteTag == null || emoteTag.length() == 0) {
+            return emotes;
+        }
 
-        while(emoteMatcher.find()) {
-            String emoteId = emoteMatcher.group(1);
-            String[] positions = emoteMatcher.group(2).split(",");
-            emotes.add(new ChatEmote(positions, getEmoteFromId(emoteId, false)));
+        /* 33:19-26,x:a-b */
+        for (final String emoteSpec : emoteTag.split(",")) {
+            final String[] emoteParts = emoteSpec.split(":");
+            if (emoteParts.length != 2) {
+                continue;
+            }
+
+            try {
+                emotes.add(new ChatEmote(new String[] { emoteParts[1] },
+                        getEmoteFromId(emoteParts[0], false)));
+            } catch (Exception e) {
+                Log.d(LOG_TAG, "Failed to parse emote tag: " + emoteSpec);
+                continue;
+            }
         }
 
         return emotes;
@@ -269,6 +280,9 @@ public class ChatEmoteManager {
 
     protected List<ChatBadge> getChatBadgesForTag(String badgeTag) {
         List<ChatBadge> badges = new ArrayList<>();
+
+        if (badgeTag == null || badgeTag.length() == 0)
+            return badges;
 
         for (final String item : badgeTag.split(",")) {
             if (item.length() == 0) {

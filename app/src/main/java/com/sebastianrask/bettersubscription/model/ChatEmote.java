@@ -2,6 +2,8 @@ package com.sebastianrask.bettersubscription.model;
 
 import android.graphics.Bitmap;
 
+import java.util.Arrays;
+
 /**
  * Created by SebastianRask on 03-03-2016.
  */
@@ -30,6 +32,11 @@ public class ChatEmote {
 
 	public void setGif(boolean gif) {
 		isGif = gif;
+	}
+
+	public String toString() {
+		return String.format("ChatEmote{positions=%s,gif=%s}",
+				Arrays.toString(emotePositions), isGif);
 	}
 
 

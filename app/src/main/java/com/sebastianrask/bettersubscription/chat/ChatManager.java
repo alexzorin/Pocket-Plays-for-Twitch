@@ -30,6 +30,8 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.io.PushbackReader;
+import java.io.StringReader;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -44,11 +46,6 @@ import javax.net.ssl.SSLSocketFactory;
 
 public class ChatManager extends AsyncTask<Void, ChatManager.ProgressUpdate, Void> {
 	private final String LOG_TAG = getClass().getSimpleName();
-
-	private Pattern roomstatePattern = Pattern.compile("@broadcaster-lang=(.*);r9k=(0|1);slow=(0|\\d+);subs-only=(0|1)"),
-					userStatePattern = Pattern.compile("@badges=(.*);color=(#?\\w*);display-name=(.+);emote-sets="),
-					stdVarPattern = Pattern.compile("@badges=(.*);color=(#?\\w*);display-name=(\\w+).*;room-id=\\d+;.*subscriber=(0|1);.*turbo=(0|1);.* PRIVMSG #\\S* :(.*)"),
-					noticePattern = Pattern.compile("@msg-id=(\\w*)");
 
 	// Default Twitch Chat connect IP/domain and port
 	private String twitchChatServer = "irc.twitch.tv";
@@ -219,30 +216,44 @@ public class ChatManager extends AsyncTask<Void, ChatManager.ProgressUpdate, Voi
 					break;
 				}
 
-				if (line.contains("004 " + user + " :")) {
-					Log.d(LOG_TAG, "<" + line);
-					Log.d(LOG_TAG, "Connected >> " + user + " ~ irc.twitch.tv");
-					onProgressUpdate(new ProgressUpdate(ProgressUpdate.UpdateType.ON_CONNECTED));
-					sendRawMessage("CAP REQ :twitch.tv/tags twitch.tv/commands");
-					sendRawMessage("JOIN " + hashChannel + "\r\n");
-				} else if(userDisplayName == null && line.contains("USERSTATE " + hashChannel)) {
-					handleUserstate(line);
-			    } else if(line.contains("ROOMSTATE " + hashChannel)) {
-					handleRoomstate(line);
-				} else if(line.contains("NOTICE " + hashChannel)) {
-					handleNotice(line);
-				} else if (line.startsWith("PING")) { // Twitch wants to know if we are still here. Send PONG and Server info back
-					handlePing(line);
-				} else if (line.contains("PRIVMSG")) {
-					handleMessage(line);
-				} else if (line.toLowerCase().contains("disconnected"))	{
-					Log.e(LOG_TAG, "Disconnected - trying to reconnect");
-					onProgressUpdate(new ProgressUpdate(ProgressUpdate.UpdateType.ON_RECONNECTING));
-					connect(address, port); //ToDo: Test if chat keeps playing if connection is lost
-				} else if(line.contains("NOTICE * :Error logging in")) {
-					onProgressUpdate(new ProgressUpdate(ProgressUpdate.UpdateType.ON_CONNECTION_FAILED));
+				final IRCv3Message msg = IRCv3Message.parse(line);
+				if (msg != null) {
+					Log.d(LOG_TAG, msg.toString());
+
+					switch (msg.getCommand()) {
+						case "004":
+							onProgressUpdate(new ProgressUpdate(ProgressUpdate.UpdateType.ON_CONNECTED));
+							sendRawMessage("CAP REQ :twitch.tv/tags twitch.tv/commands");
+							sendRawMessage("JOIN " + hashChannel + "\r\n");
+							break;
+						case "USERSTATE":
+							handleUserstate(msg);
+							break;
+						case "ROOMSTATE":
+							if (hashChannel.equals(msg.getParams()))
+								handleRoomstate(msg);
+							break;
+						case "USERNOTICE":
+							if (hashChannel.equals(msg.getParamsTarget()))
+								handleUserstate(msg);
+							break;
+						case "PRIVMSG":
+							if (hashChannel.equals(msg.getParamsTarget()))
+								handleMessage(msg);
+							break;
+					}
 				} else {
-					Log.d(LOG_TAG, "<" + line);
+					Log.d(LOG_TAG, "Unhandled: " + line);
+
+					if (line.contains("PING")) { // Twitch wants to know if we are still here. Send PONG and Server info back
+						handlePing(line);
+					} else if (line.toLowerCase().contains("disconnected"))	{
+						Log.e(LOG_TAG, "Disconnected - trying to reconnect");
+						onProgressUpdate(new ProgressUpdate(ProgressUpdate.UpdateType.ON_RECONNECTING));
+						connect(address, port); //ToDo: Test if chat keeps playing if connection is lost
+					} else if(line.contains("NOTICE * :Error logging in")) {
+						onProgressUpdate(new ProgressUpdate(ProgressUpdate.UpdateType.ON_CONNECTION_FAILED));
+					}
 				}
 			}
 
@@ -252,94 +263,67 @@ public class ChatManager extends AsyncTask<Void, ChatManager.ProgressUpdate, Voi
 		}
 	}
 
-	private void handleNotice(String line) {
-		Log.d(LOG_TAG, "Notice: " + line);
-		Matcher noticeMatcher = noticePattern.matcher(line);
-		if(noticeMatcher.find()) {
-			String msgId = noticeMatcher.group(1);
-			if(msgId.equals("subs_on")) {
+	private void handleNotice(final IRCv3Message msg) {
+		final String msgId = msg.getTag("msg-id");
+		switch (msgId) {
+			case "subs_on":
 				chatIsSubsonlymode = true;
-			} else if(msgId.equals("subs_off")) {
+				break;
+			case "subs_off":
 				chatIsSubsonlymode = false;
-			} else if(msgId.equals("slow_on")) {
+				break;
+			case "slow_on":
 				chatIsSlowmode = true;
-			} else if(msgId.equals("slow_off")) {
+				break;
+			case "slow_off":
 				chatIsSlowmode = false;
-			} else if(msgId.equals("r9k_on")) {
+				break;
+			case "r9k_on":
 				chatIsR9kmode = true;
-			} else if(msgId.equals("r9k_off")) {
+				break;
+			case "r9k_off":
 				chatIsR9kmode = false;
-			}
-
-			onProgressUpdate(new ProgressUpdate(ProgressUpdate.UpdateType.ON_ROOMSTATE_CHANGE));
-		}else {
-			Log.d(LOG_TAG, "Failed to find notice pattern in: \n" + line);
+				break;
 		}
+
+		onProgressUpdate(new ProgressUpdate(ProgressUpdate.UpdateType.ON_ROOMSTATE_CHANGE));
 	}
 
 	/**
 	 * Parses the received line and gets the roomstate.
 	 * If the roomstate has changed since last check variables are changed and the chatfragment is notified
-	 * @param line
+	 * @param msg
 	 */
-	private void handleRoomstate(String line) {
-		Matcher roomstateMatcher = roomstatePattern.matcher(line);
-		if(roomstateMatcher.find()) {
-			String broadcastlanguage = roomstateMatcher.group(1);
-			boolean newR9k = roomstateMatcher.group(2).equals("1");
-			boolean newSlow = !roomstateMatcher.group(3).equals("0");
-			boolean newSub = roomstateMatcher.group(4).equals("1");
-			// If the one of the roomstate types have changed notify the chatfragment
-			if(chatIsR9kmode != newR9k || chatIsSlowmode != newSlow || chatIsSubsonlymode != newSub) {
-				chatIsR9kmode = newR9k;
-				chatIsSlowmode = newSlow;
-				chatIsSubsonlymode = newSub;
-
-				onProgressUpdate(new ProgressUpdate(ProgressUpdate.UpdateType.ON_ROOMSTATE_CHANGE));
-			}
-		}else {
-			Log.d(LOG_TAG, "Failed to find roomstate pattern in: \n" + line);
-		}
+	private void handleRoomstate(final IRCv3Message msg) {
+		chatIsR9kmode = msg.getTag("r9k").equals("1");
+		chatIsSlowmode= msg.getTag("slow").equals("1");
+		chatIsSubsonlymode = msg.getTag("subs-only").equals("1");
 	}
 
 	/**
 	 * Parses the received line and saves data such as the users color, if the user is mod, subscriber or turbouser
-	 * @param line
+	 * @param msg
 	 */
-	private void handleUserstate(String line) {
-		Matcher userstateMatcher = userStatePattern.matcher(line);
-		if(userstateMatcher.find()) {
-			userBadges = mEmoteManager.getChatBadgesForTag(userstateMatcher.group(1));
-			userColor = userstateMatcher.group(2);
-			userDisplayName = userstateMatcher.group(3);
-		} else {
-			Log.e(LOG_TAG, "Failed to find userstate pattern in: \n" + line);
-		}
+	private void handleUserstate(final IRCv3Message msg) {
+		userBadges = mEmoteManager.getChatBadgesForTag(msg.getTag("badges"));
+		userColor = msg.getTag("color");
+		userDisplayName = msg.getTag("display-name");
 	}
 
 	/**
 	 * Parses and builds retrieved messages.
 	 * Sends build message back via callback.
-	 * @param line
+	 * @param msg
 	 */
-	private void handleMessage(String line) {
-		Matcher stdVarMatcher = stdVarPattern.matcher(line);
-		List<ChatEmote> emotes = new ArrayList<>(mEmoteManager.findTwitchEmotes(line));
+	private void handleMessage(final IRCv3Message msg) {
+		final List<ChatEmote> emotes = mEmoteManager.findTwitchEmotes(msg.getTag("emotes"));
+		emotes.addAll(mEmoteManager.findBttvEmotes(msg.getParamsMessage()));
 
-		if(stdVarMatcher.find()) {
-			final String badgeTag = stdVarMatcher.group(1);
-			String color = stdVarMatcher.group(2);
-			String displayName = stdVarMatcher.group(3);
-			String message = stdVarMatcher.group(6);
-			emotes.addAll(mEmoteManager.findBttvEmotes(message));
-			boolean highlight = false;//Pattern.compile(Pattern.quote(userDisplayName), Pattern.CASE_INSENSITIVE).matcher(message).find();
-			final List<ChatBadge> badges = mEmoteManager.getChatBadgesForTag(badgeTag);
+		final List<ChatBadge> badges = mEmoteManager.getChatBadgesForTag(msg.getTag("badges"));
 
-			ChatMessage chatMessage = new ChatMessage(message, displayName, color, emotes, badges, highlight);
-			publishProgress(new ProgressUpdate(ProgressUpdate.UpdateType.ON_MESSAGE, chatMessage));
-		} else {
-			Log.e(LOG_TAG, "Failed to find message pattern in: \n" + line);
-		}
+		final ChatMessage cm = new ChatMessage(msg.getParamsMessage(),
+				msg.getTag("display-name"),msg.getTag("color"), emotes, badges, false);
+		publishProgress(new ProgressUpdate(ProgressUpdate.UpdateType.ON_MESSAGE, cm));
 	}
 
 	/**
@@ -491,5 +475,105 @@ public class ChatManager extends AsyncTask<Void, ChatManager.ProgressUpdate, Voi
 		public void setMessage(ChatMessage message) {
 			this.message = message;
 		}
+	}
+
+	private static class IRCv3Message {
+
+		private static final Pattern ircv3Pattern =
+				Pattern.compile("^(@?[^\\r\\n ]+\\s){0,1}:([^\\s]+) (\\w+) (.*)$");
+
+		private Map<String,String> tags;
+		private String command;
+		private String params;
+		private String raw;
+
+		private IRCv3Message() {
+		}
+
+		public boolean hasTag(String tag) {
+			return tags.containsKey(tag);
+		}
+
+		public String getTag(String tag) {
+			return tags.get(tag);
+		}
+
+		public String getCommand() {
+			return command;
+		}
+
+		public String getParams() {
+			return params;
+		}
+
+		public String getParamsMessage() {
+			if (params == null) {
+				return null;
+			}
+			final int msgStart = params.indexOf(":");
+			if (msgStart == -1 || msgStart == params.length()) {
+				return null;
+			}
+
+			return params.substring(msgStart + 1);
+		}
+
+		public String getParamsTarget() {
+			if (params == null) {
+				return null;
+			}
+			final int targetEnd = params.indexOf(" ");
+			if (targetEnd <= 0) {
+				return params;
+			}
+
+			return params.substring(0, targetEnd);
+		}
+
+		public String getRaw() {
+			return raw;
+		}
+
+		public static IRCv3Message parse(final String msg) {
+			final Matcher m = ircv3Pattern.matcher(msg);
+			if (!m.find()) {
+				return null;
+			}
+
+			final IRCv3Message result = new IRCv3Message();
+
+			result.raw = msg;
+			result.command = m.group(3);
+			result.params = m.group(4);
+
+			final String allTags = m.group(1);
+			if (allTags == null) {
+				return result;
+			}
+
+			result.tags = new HashMap<>();
+
+			final String[] splitTags = allTags.substring(1).split(";");
+			for (final String tagSpec : splitTags) {
+				final String[] tagSplit = tagSpec.split("=");
+
+				final String tagName = tagSplit[0];
+				final String tagValue = (tagSplit.length == 2 ? tagSplit[1] : "")
+						.replace("\\:", ";")
+						.replace("\\\\", "\\");
+
+				result.tags.put(tagName, tagValue);
+			}
+
+			return result;
+		}
+
+		@Override
+		public String toString() {
+			return String.format("IRCv3Message{command=%s,params=%s,tags=%s," +
+							"paramsMessage=%s,paramsTarget=%s}",
+					command, params, tags, getParamsMessage(), getParamsTarget());
+		}
+
 	}
 }

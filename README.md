@@ -11,6 +11,7 @@ It differs in these basic ways:
 - Notification support removed
 - Donation prompt removed (if you like, install the original and donate to the author that way, they deserve it)
 - Made a few mb leaner by stripping unused resources
+- Enforces TLS for chat connections
 - Support global and channel badges (e.g. subscription streaks)
 
 It is not published on any app stores.
