@@ -278,22 +278,7 @@ public class ChatEmoteManager {
 
             emotes.add(new ChatEmote(emotePositions, getEmoteFromId(emoteID, false)));
         }
-
-//        for (final String emoteSpec : emoteTag.split(",")) {
-//            final String[] emoteParts = emoteSpec.split(":");
-//            if (emoteParts.length != 2) {
-//                continue;
-//            }
-//
-//            try {
-//                emotes.add(new ChatEmote(new String[] { emoteParts[1] },
-//                        getEmoteFromId(emoteParts[0], false)));
-//            } catch (Exception e) {
-//                Log.d(LOG_TAG, "Failed to parse emote tag: " + emoteSpec);
-//                continue;
-//            }
-//        }
-
+        
         return emotes;
     }
 

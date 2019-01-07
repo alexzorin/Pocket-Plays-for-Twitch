@@ -98,14 +98,14 @@ public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.ContactViewHol
 
 			final int nameColor = getNameColor(message.getColor());
 
-            // Append all chat badges
-            for (final ChatBadge badge : message.getBadges()) {
-                builder.append("  ");
-                builder.setSpan(new ImageSpan(context, badge.getBitmap(), emoteAlignment),
-                        builder.length() - 2, builder.length() - 1, 0);
-            }
+			// Append all chat badges
+			for (final ChatBadge badge : message.getBadges()) {
+				builder.append("  ");
+				builder.setSpan(new ImageSpan(context, badge.getBitmap(), emoteAlignment),
+						builder.length() - 2, builder.length() - 1, 0);
+			}
 
-            // Don't include name for notices
+			// Don't include name for notices
 			if (!message.isNotice()) {
 				// Append chatter name
 				builder.append(message.getName());
