@@ -235,7 +235,7 @@ public class ChatManager extends AsyncTask<Void, ChatManager.ProgressUpdate, Voi
 							break;
 						case "USERNOTICE":
 							if (hashChannel.equals(msg.getParamsTarget()))
-								handleUserstate(msg);
+								handleNotice(msg);
 							break;
 						case "PRIVMSG":
 							if (hashChannel.equals(msg.getParamsTarget()))
@@ -284,6 +284,30 @@ public class ChatManager extends AsyncTask<Void, ChatManager.ProgressUpdate, Voi
 			case "r9k_off":
 				chatIsR9kmode = false;
 				break;
+			case "sub":
+			case "subgift":
+			case "anonsubgift":
+			case "resub":
+				final List<ChatEmote> emotes = mEmoteManager.findTwitchEmotes(msg.getTag("emotes"));
+				emotes.addAll(mEmoteManager.findBttvEmotes(msg.getParamsMessage()));
+				final List<ChatBadge> badges = mEmoteManager.getChatBadgesForTag(msg.getTag("badges"));
+
+				// Send one message for the sub/gift/resub
+				final String systemMsg = msg.getTag("system-msg");
+				if (systemMsg != null && systemMsg.length() > 0) {
+					final ChatMessage subMsg = new ChatMessage(systemMsg, msg.getParamsTarget(),
+							msg.getTag("color"), emotes, badges, false, true);
+					publishProgress(new ProgressUpdate(ProgressUpdate.UpdateType.ON_MESSAGE, subMsg));
+				}
+
+				// And send an actual chat message, if there is one (for resubs)
+				if (msg.getParamsMessage() != null && msg.getParamsMessage().length() > 0) {
+					final ChatMessage cm = new ChatMessage(msg.getParamsMessage(),
+							msg.getTag("display-name"), msg.getTag("color"), emotes, badges, false, false);
+					publishProgress(new ProgressUpdate(ProgressUpdate.UpdateType.ON_MESSAGE, cm));
+				}
+
+				break;
 		}
 
 		onProgressUpdate(new ProgressUpdate(ProgressUpdate.UpdateType.ON_ROOMSTATE_CHANGE));
@@ -318,11 +342,10 @@ public class ChatManager extends AsyncTask<Void, ChatManager.ProgressUpdate, Voi
 	private void handleMessage(final IRCv3Message msg) {
 		final List<ChatEmote> emotes = mEmoteManager.findTwitchEmotes(msg.getTag("emotes"));
 		emotes.addAll(mEmoteManager.findBttvEmotes(msg.getParamsMessage()));
-
 		final List<ChatBadge> badges = mEmoteManager.getChatBadgesForTag(msg.getTag("badges"));
 
 		final ChatMessage cm = new ChatMessage(msg.getParamsMessage(),
-				msg.getTag("display-name"),msg.getTag("color"), emotes, badges, false);
+				msg.getTag("display-name"), msg.getTag("color"), emotes, badges, false, false);
 		publishProgress(new ProgressUpdate(ProgressUpdate.UpdateType.ON_MESSAGE, cm));
 	}
 
@@ -560,7 +583,10 @@ public class ChatManager extends AsyncTask<Void, ChatManager.ProgressUpdate, Voi
 				final String tagName = tagSplit[0];
 				final String tagValue = (tagSplit.length == 2 ? tagSplit[1] : "")
 						.replace("\\:", ";")
-						.replace("\\\\", "\\");
+						.replace("\\s", " ")
+						.replace("\\\\", "\\")
+						.replace("\\n", "\n")
+						.replace("\\r", "\r");
 
 				result.tags.put(tagName, tagValue);
 			}

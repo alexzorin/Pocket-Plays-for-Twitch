@@ -2,7 +2,7 @@
 
 This is a fork of the [Pocket Plays for Twitch](https://github.com/SebastianRask/Pocket-Plays-for-Twitch) Android application.
 
-It differs in these basic ways:
+It differs in these ways:
 
 - No Google Play services reliance. This means Chromecast support is gone.
 - Google Analytics stripped out.
@@ -13,6 +13,7 @@ It differs in these basic ways:
 - Made a few mb leaner by stripping unused resources
 - Enforces TLS for chat connections
 - Support global and channel badges (e.g. subscription streaks)
+- Displays sub/resub/gift notices
 
 It is not published on any app stores.
 

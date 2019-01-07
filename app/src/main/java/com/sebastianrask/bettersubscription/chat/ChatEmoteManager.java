@@ -231,6 +231,10 @@ public class ChatEmoteManager {
      */
     protected List<ChatEmote> findBttvEmotes(String message) {
         List<ChatEmote> emotes = new ArrayList<>();
+        if (message == null || message.length() == 0) {
+            return emotes;
+        }
+
         Matcher bttvEmoteMatcher = bttvEmotesPattern.matcher(message);
 
         while (bttvEmoteMatcher.find()) {
@@ -259,21 +263,36 @@ public class ChatEmoteManager {
             return emotes;
         }
 
-        /* 33:19-26,x:a-b */
-        for (final String emoteSpec : emoteTag.split(",")) {
-            final String[] emoteParts = emoteSpec.split(":");
-            if (emoteParts.length != 2) {
+        // 104868:33-39/425618:5-7/104869:9-15,17-23,25-31
+        for (final String eachEmote : emoteTag.split("/")) {
+            // 104869:9-15,17-23,25-31
+            final String[] emoteSpec = eachEmote.split(":");
+            if (emoteSpec.length != 2) {
                 continue;
             }
 
-            try {
-                emotes.add(new ChatEmote(new String[] { emoteParts[1] },
-                        getEmoteFromId(emoteParts[0], false)));
-            } catch (Exception e) {
-                Log.d(LOG_TAG, "Failed to parse emote tag: " + emoteSpec);
-                continue;
-            }
+            // 104869
+            final String emoteID = emoteSpec[0];
+            // 9-15,17-23,25-31
+            final String[] emotePositions = emoteSpec[1].split(",");
+
+            emotes.add(new ChatEmote(emotePositions, getEmoteFromId(emoteID, false)));
         }
+
+//        for (final String emoteSpec : emoteTag.split(",")) {
+//            final String[] emoteParts = emoteSpec.split(":");
+//            if (emoteParts.length != 2) {
+//                continue;
+//            }
+//
+//            try {
+//                emotes.add(new ChatEmote(new String[] { emoteParts[1] },
+//                        getEmoteFromId(emoteParts[0], false)));
+//            } catch (Exception e) {
+//                Log.d(LOG_TAG, "Failed to parse emote tag: " + emoteSpec);
+//                continue;
+//            }
+//        }
 
         return emotes;
     }

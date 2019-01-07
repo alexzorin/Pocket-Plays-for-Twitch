@@ -2,6 +2,7 @@ package com.sebastianrask.bettersubscription.adapters;
 
 import android.app.Activity;
 import android.graphics.Color;
+import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 
@@ -12,12 +13,14 @@ import android.text.Spannable;
 import android.text.SpannableStringBuilder;
 import android.text.Spanned;
 import android.text.method.LinkMovementMethod;
+import android.text.style.BackgroundColorSpan;
 import android.text.style.ClickableSpan;
 import android.text.style.DynamicDrawableSpan;
 import android.text.style.ForegroundColorSpan;
 import android.text.style.ImageSpan;
 
 import android.text.style.RelativeSizeSpan;
+import android.text.style.StyleSpan;
 import android.util.Log;
 import android.view.HapticFeedbackConstants;
 import android.view.LayoutInflater;
@@ -93,49 +96,57 @@ public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.ContactViewHol
 
 			final SpannableStringBuilder builder = new SpannableStringBuilder();
 
-			// Append all chat badges
-			for (final ChatBadge badge : message.getBadges()) {
-				builder.append("  ");
-				builder.setSpan(new ImageSpan(context, badge.getBitmap(), emoteAlignment),
-						builder.length() - 2, builder.length() - 1, 0);
+			final int nameColor = getNameColor(message.getColor());
+
+            // Append all chat badges
+            for (final ChatBadge badge : message.getBadges()) {
+                builder.append("  ");
+                builder.setSpan(new ImageSpan(context, badge.getBitmap(), emoteAlignment),
+                        builder.length() - 2, builder.length() - 1, 0);
+            }
+
+            // Don't include name for notices
+			if (!message.isNotice()) {
+				// Append chatter name
+				builder.append(message.getName());
+				builder.setSpan(new ForegroundColorSpan(nameColor), 0, builder.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
 			}
 
-			// Append chatter name
-			builder.append(message.getName());
-			final int nameColor = getNameColor(message.getColor());
-			builder.setSpan(new ForegroundColorSpan(nameColor), 0, builder.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-
 			// Append message with leading :
-			final String messageWithPre = PREMESSAGE + message.getMessage();
+			final String messageWithPre = (message.isNotice() ? "" : PREMESSAGE) + message.getMessage();
 			final SpannableStringBuilder resultMessage = new SpannableStringBuilder(messageWithPre);
 			resultMessage.setSpan(new ForegroundColorSpan(getMessageColor()),
 					0, resultMessage.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-
 			// Append clickable spans for any links
 			checkForLink(messageWithPre, resultMessage);
 
-			// Replace any emotes
-			for(ChatEmote emote : message.getEmotes()) {
-				for(String emotePosition : emote.getEmotePositions()) {
-					final String[] toAndFrom = emotePosition.split("-");
-					final int fromPosition = Integer.parseInt(toAndFrom[0]);
-					final int toPosition = Integer.parseInt(toAndFrom[1]);
+			if (!message.isNotice()) {
+				// Replace any emotes
+				for (ChatEmote emote : message.getEmotes()) {
+					for (String emotePosition : emote.getEmotePositions()) {
+						final String[] toAndFrom = emotePosition.split("-");
+						final int fromPosition = Integer.parseInt(toAndFrom[0]);
+						final int toPosition = Integer.parseInt(toAndFrom[1]);
 
-					final ImageSpan emoteSpan = new ImageSpan(context, emote.getEmoteBitmap(), emoteAlignment);
-					resultMessage.setSpan(emoteSpan,
-							fromPosition + PREMESSAGE.length(),
-							toPosition + 1 + PREMESSAGE.length(),
-							Spanned.SPAN_INCLUSIVE_INCLUSIVE);
+						final ImageSpan emoteSpan = new ImageSpan(context, emote.getEmoteBitmap(), emoteAlignment);
+						resultMessage.setSpan(emoteSpan,
+								fromPosition + PREMESSAGE.length(),
+								toPosition + 1 + PREMESSAGE.length(),
+								Spanned.SPAN_INCLUSIVE_INCLUSIVE);
 
-					holder.message.setTextIsSelectable(true);
+						holder.message.setTextIsSelectable(true);
+					}
 				}
 			}
 
-			if (message.isHighlight()) {
-				holder.message.setBackgroundColor(Service.getColorAttribute(R.attr.colorAccent, R.color.accent, context));
+			builder.append(resultMessage);
+
+			// Apply notice boldness
+			if (message.isNotice()) {
+				builder.setSpan(new ForegroundColorSpan(nameColor), 0, builder.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+				builder.setSpan(new StyleSpan(Typeface.BOLD), 0, builder.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
 			}
 
-			builder.append(resultMessage);
 			builder.setSpan(new RelativeSizeSpan(getTextSize()), 0, builder.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
 			holder.message.setText(builder);
 			holder.message.setMovementMethod(LinkMovementMethod.getInstance());

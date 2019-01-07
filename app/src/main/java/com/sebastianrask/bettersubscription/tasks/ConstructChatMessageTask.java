@@ -43,6 +43,7 @@ public class ConstructChatMessageTask extends AsyncTask<Void, Void, ChatMessage>
 					chatManager.getUserColor(),
 					getMessageChatEmotes(),
 					chatManager.getUserBadges(),
+					false,
 					false
 			);
 		} catch (Exception e) {
