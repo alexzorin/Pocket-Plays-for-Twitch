@@ -21,4 +21,8 @@ public class Badge {
         return versions.get(version);
     }
 
+    public Iterable<String> getVersions() {
+        return versions.keySet();
+    }
+
 }

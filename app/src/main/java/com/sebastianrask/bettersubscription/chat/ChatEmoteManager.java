@@ -48,7 +48,8 @@ public class ChatEmoteManager {
     private final List<Emote> bttvChannel = new ArrayList<>();
 
     private final Map<String, Badge> badgesGlobal = new HashMap();
-    private final Map<String, Badge> badgesChannel = new HashMap();
+    // Needs to be static so we can remember what to drop from the cache
+    private static final Map<String, Badge> badgesChannel = new HashMap();
 
     private Pattern bttvEmotesPattern = Pattern.compile("");
 
@@ -151,6 +152,15 @@ public class ChatEmoteManager {
      * Must not be called from the main thread.
      */
     protected void loadChannelChatBadges(EmoteFetchCallback callback) {
+        // We need to remove the channel badges from the static cache, because
+        // the names overlap between channels, e.g. "subscriber/0"
+        for (Map.Entry<String, Badge> entry : badgesChannel.entrySet()) {
+            for (String version : entry.getValue().getVersions()) {
+                cachedBadges.remove(entry.getKey() + "/" + version);
+            }
+        }
+        badgesChannel.clear();
+
         loadBadgeSetsFromURL("https://badges.twitch.tv/v1/badges/channels/" +channelId + "/display",
                 badgesChannel, callback);
     }
@@ -191,36 +201,6 @@ public class ChatEmoteManager {
             Log.d(LOG_TAG, "Failed to fetch Twitch global chat badges", e);
         } finally {
             callback.onEmoteFetched();
-        }
-    }
-
-        /**
-         * Connects to Twitch API to get the URL for the channels subscriber emote
-         * This must not be executed on main UI Thread
-         * @return
-         */
-    Bitmap getSubscriberEmote() {
-        Bitmap emote = null;
-
-        final String URL = "https://api.twitch.tv/kraken/chat/" + channelId + "/badges";
-        final String SUBSCRIBER_OBJECT = "subscriber";
-        final String SUBSCRIBER_IMAGE_STRING = "image";
-
-        try {
-            JSONObject dataObject = new JSONObject(Service.urlToJSONString(URL));
-            JSONObject subscriberObject = dataObject.getJSONObject(SUBSCRIBER_OBJECT);
-            String imageUrl = subscriberObject.getString(SUBSCRIBER_IMAGE_STRING);
-
-            emote = Service.getBitmapFromUrl(imageUrl);
-
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-
-        if(emote != null) {
-            return emote;
-        } else {
-            return BitmapFactory.decodeResource(context.getResources(), R.drawable.ic_missing_emote);
         }
     }
 
@@ -278,7 +258,7 @@ public class ChatEmoteManager {
 
             emotes.add(new ChatEmote(emotePositions, getEmoteFromId(emoteID, false)));
         }
-        
+
         return emotes;
     }
 
