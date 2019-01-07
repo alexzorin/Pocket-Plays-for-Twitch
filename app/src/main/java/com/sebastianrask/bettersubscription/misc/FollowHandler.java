@@ -54,7 +54,6 @@ public class FollowHandler {
 			public void onTaskDone(Boolean result) {
 				isStreamerFollowed = result;
 				if(result) {
-					Service.insertStreamerInfoToDB(mContext, mChannelInfo);
 					mDelegate.followSuccess();
 				} else {
 					mDelegate.followFailure();
@@ -71,9 +70,7 @@ public class FollowHandler {
 			@Override
 			public void onTaskDone(Boolean result) {
 				isStreamerFollowed = !result;
-
 				if(result) {
-					Service.deleteStreamerInfoFromDB(mContext, mChannelInfo.getUserId());
 					mDelegate.unfollowSuccess();
 				} else {
 					mDelegate.unfollowFailure();

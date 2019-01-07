@@ -4,31 +4,23 @@ import android.animation.Animator;
 import android.animation.ArgbEvaluator;
 import android.animation.ObjectAnimator;
 import android.app.Activity;
-import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
-import android.content.res.Configuration;
 import android.content.res.TypedArray;
-import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.BitmapShader;
 import android.graphics.Canvas;
-import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
 import android.graphics.Rect;
 import android.graphics.RectF;
-import android.graphics.Shader;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
-import android.net.TrafficStats;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.TypedValue;
@@ -37,7 +29,6 @@ import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.ImageButton;
-import android.widget.ImageView;
 
 import com.sebastianrask.bettersubscription.R;
 import com.sebastianrask.bettersubscription.activities.main.FeaturedStreamsActivity;
@@ -60,11 +51,8 @@ import java.lang.reflect.Field;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Map;
 import java.util.Random;
-import java.util.TreeMap;
 
 import androidx.annotation.AttrRes;
 import androidx.annotation.ColorRes;
@@ -613,242 +601,12 @@ public class Service {
     }
 
     /**
-     * Connects to the database containing data of user follows. Loops through every record of in the database and creates a StreamerInfo object for these
-     */
-    public static Map<String, ChannelInfo> getStreamerInfoFromDB(String LOG_TAG, Context context, boolean includeThumbnails) {
-        Map<String, ChannelInfo> subscriptions = new TreeMap<>();
-        SubscriptionsDbHelper mDbHelper = new SubscriptionsDbHelper(context);
-        final boolean DISTINCT = true;
-        String[] allColumns = {
-                SubscriptionsDbHelper.COLUMN_ID, SubscriptionsDbHelper.COLUMN_STREAMER_NAME,
-                SubscriptionsDbHelper.COLUMN_DISPLAY_NAME, SubscriptionsDbHelper.COLUMN_DESCRIPTION,
-                SubscriptionsDbHelper.COLUMN_FOLLOWERS, SubscriptionsDbHelper.COLUMN_UNIQUE_VIEWS,
-                SubscriptionsDbHelper.COLUMN_LOGO_URL, SubscriptionsDbHelper.COLUMN_VIDEO_BANNER_URL,
-                SubscriptionsDbHelper.COLUMN_PROFILE_BANNER_URL, SubscriptionsDbHelper.COLUMN_NOTIFY_WHEN_LIVE};
-
-        // Get the data repository in read mode
-        SQLiteDatabase db = mDbHelper.getReadableDatabase();
-
-        Cursor cursor = db.query(
-                DISTINCT,
-                SubscriptionsDbHelper.TABLE_NAME,
-                allColumns,
-                null, null, null, null, null, null);
-
-        if (cursor.moveToFirst()) {
-            while (!cursor.isAfterLast()) {
-                int streamerId = cursor.getInt(0);
-                String streamerName = cursor.getString(1);
-                String displayName = cursor.getString(2);
-                String streamDescription = cursor.getString(3);
-                int followers = cursor.getInt(4);
-                int views = cursor.getInt(5);
-                URL logo = null;
-                URL videoBanner = null;
-                URL profileBanner = null;
-                boolean notifyWhenLive = cursor.getInt(9) == 1;
-
-                // Make sure the streamer has uploaded pictures
-                try {
-                    if (!cursor.isNull(6))
-                        logo = new URL(cursor.getString(6));
-
-                    if (!cursor.isNull(7))
-                        videoBanner = new URL(cursor.getString(7));
-
-                    if (!cursor.isNull(8))
-                        profileBanner = new URL(cursor.getString(8));
-
-
-                } catch (MalformedURLException e) {
-                    e.printStackTrace();
-                }
-
-                // Create new StreamerInfo object from data fetched from database
-                ChannelInfo mChannelInfo = new ChannelInfo(streamerId, streamerName, displayName, streamDescription, followers, views, logo, videoBanner, profileBanner, includeThumbnails);
-                mChannelInfo.setNotifyWhenLive(notifyWhenLive);
-                subscriptions.put(mChannelInfo.getStreamerName(), mChannelInfo);
-
-                // Move to the next record in the database
-                cursor.moveToNext();
-            }
-        }
-
-        cursor.close();
-        db.close();
-
-        return subscriptions;
-    }
-
-    /**
      * Determines whether or not the user is currently following a streamer.
-     * This is done by looking in the SQLite database
      */
     public static boolean isUserFollowingStreamer(String streamername, Context context) {
-        SubscriptionsDbHelper mDbHelper = new SubscriptionsDbHelper(context);
-        SQLiteDatabase db = mDbHelper.getReadableDatabase();
-        String query = "SELECT * FROM " + SubscriptionsDbHelper.TABLE_NAME + " WHERE " + SubscriptionsDbHelper.COLUMN_STREAMER_NAME + "='" + streamername + "';";
-        boolean result = false;
-        Cursor cursor = db.rawQuery(query, null);
-        if (cursor.getCount() > 0) {
-            result = true;
-        }
-        cursor.close();
-        db.close();
-        return result;
+        return false;
     }
 
-    /**
-     * Updates an existing streamer's info in the database
-     */
-    public static void updateStreamerInfoDb(ChannelInfo aChannelInfo, Context context) {
-        ContentValues values = new ContentValues();
-        values.put(SubscriptionsDbHelper.COLUMN_FOLLOWERS, aChannelInfo.getFollowers());
-        values.put(SubscriptionsDbHelper.COLUMN_UNIQUE_VIEWS, aChannelInfo.getViews());
-
-
-        updateStreamerInfoDbWithValues(values, context, aChannelInfo.getStreamerName());
-    }
-
-    public static void updateStreamerInfoNotificationSettingForAll(Context context, boolean enable) {
-        ContentValues values = new ContentValues();
-        values.put(SubscriptionsDbHelper.COLUMN_NOTIFY_WHEN_LIVE, enable ? 1 : 0);
-
-        updateStreamerInfoDbWithValues(values, context, null, new String[]{});
-    }
-
-    public static void updateStreamerInfoNotificationSetting(ChannelInfo aChannelInfo, Context context) {
-        ContentValues values = new ContentValues();
-        values.put(SubscriptionsDbHelper.COLUMN_NOTIFY_WHEN_LIVE, aChannelInfo.isNotifyWhenLive() ? 1 : 0);
-
-        updateStreamerInfoDbWithValues(values, context, aChannelInfo.getStreamerName());
-    }
-
-    private static void updateStreamerInfoDbWithValues(ContentValues values, Context context, String streamerName) {
-        updateStreamerInfoDbWithValues(values, context, SubscriptionsDbHelper.COLUMN_STREAMER_NAME + "=?", new String[]{streamerName});
-    }
-
-    private static void updateStreamerInfoDbWithValues(ContentValues values, Context context, String whereClause, String[] whereArgs) {
-        SubscriptionsDbHelper helper = new SubscriptionsDbHelper(context);
-
-        try {
-            SQLiteDatabase db = helper.getWritableDatabase();
-
-            if (isDbSafe(db)) {
-                db.update(SubscriptionsDbHelper.TABLE_NAME, values, whereClause, whereArgs);
-            }
-
-            db.close();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    private static boolean isDbSafe(SQLiteDatabase db) {
-        return db.isOpen() && !db.isReadOnly() && !db.isDbLockedByCurrentThread();
-    }
-
-    public static boolean deleteStreamerInfoFromDB(Context context, Integer streamerId) {
-        SubscriptionsDbHelper mDbHelper = new SubscriptionsDbHelper(context);
-        SQLiteDatabase db = mDbHelper.getWritableDatabase(); // Get the data repository in write mode
-
-        boolean result = db.delete(SubscriptionsDbHelper.TABLE_NAME, SubscriptionsDbHelper.COLUMN_ID + " = '" + streamerId + "'", null) > 0;
-        db.close();
-
-        return result;
-    }
-
-    public static void insertStreamerInfoToDB(Context context, ChannelInfo streamer) {
-        ArrayList<Integer> usersNotToNotifyWhenLive = new Settings(context).getUsersNotToNotifyWhenLive();
-        boolean disableForStreamer = usersNotToNotifyWhenLive != null && usersNotToNotifyWhenLive.contains(streamer.getUserId());
-
-        // Create a new map of values where column names are the keys
-        ContentValues values = new ContentValues();
-        values.put(SubscriptionsDbHelper.COLUMN_ID, streamer.getUserId());
-        values.put(SubscriptionsDbHelper.COLUMN_STREAMER_NAME, streamer.getStreamerName());
-        values.put(SubscriptionsDbHelper.COLUMN_DISPLAY_NAME, streamer.getDisplayName());
-        values.put(SubscriptionsDbHelper.COLUMN_DESCRIPTION, streamer.getStreamDescription());
-        values.put(SubscriptionsDbHelper.COLUMN_FOLLOWERS, streamer.getFollowers());
-        values.put(SubscriptionsDbHelper.COLUMN_UNIQUE_VIEWS, streamer.getViews());
-        values.put(SubscriptionsDbHelper.COLUMN_NOTIFY_WHEN_LIVE, disableForStreamer ? 0 : 1); // Enable by default
-
-
-        // Test if the URL strings are null, to make sure we don't call toString on a null.
-        if (streamer.getLogoURL() != null)
-            values.put(SubscriptionsDbHelper.COLUMN_LOGO_URL, streamer.getLogoURL().toString());
-
-        if (streamer.getVideoBannerURL() != null)
-            values.put(SubscriptionsDbHelper.COLUMN_VIDEO_BANNER_URL, streamer.getVideoBannerURL().toString());
-
-        if (streamer.getProfileBannerURL() != null)
-            values.put(SubscriptionsDbHelper.COLUMN_PROFILE_BANNER_URL, streamer.getProfileBannerURL().toString());
-
-        SubscriptionsDbHelper helper = new SubscriptionsDbHelper(context);
-        SQLiteDatabase db = helper.getWritableDatabase();
-        db.insert(SubscriptionsDbHelper.TABLE_NAME, null, values);
-        db.close();
-
-
-    }
-
-
-    public static void clearStreamerInfoDb(Context context) {
-        Log.i("SERVICE", "CLEARING STREAMERINFO DATABASE");
-        TempStorage.getLoadedStreamers().clear();
-        SubscriptionsDbHelper helper = new SubscriptionsDbHelper(context);
-        helper.onUpgrade(helper.getWritableDatabase(), SubscriptionsDbHelper.DATABASE_VERSION, SubscriptionsDbHelper.DATABASE_VERSION + 1);
-    }
-
-    public static boolean isVertical(Context aContext) {
-        int orientation = aContext.getResources().getConfiguration().orientation;
-        if (orientation == Configuration.ORIENTATION_PORTRAIT) {
-            return true;
-        } else if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
-            return false;
-        }
-        return true;
-    }
-
-    public static void setTopRounded(Bitmap workingBitmap, ImageView v, Context context, float cornerRadius) {
-        int w = workingBitmap.getWidth();
-        int h = workingBitmap.getHeight();
-        Bitmap bmp = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
-        Canvas c = new Canvas(bmp);
-        Shader shader = new BitmapShader(workingBitmap, Shader.TileMode.MIRROR,
-                Shader.TileMode.MIRROR);
-
-        Paint paint = new Paint(Paint.FILTER_BITMAP_FLAG);
-        paint.setAntiAlias(true);
-        paint.setShader(shader);
-        RectF rec = new RectF(0, 0, w, h - (h / 3));
-        c.drawRect(new RectF(0, (h / 3), w, h), paint);
-        c.drawRoundRect(rec, cornerRadius, cornerRadius, paint);
-        //v.setImageDrawable(new BitmapDrawable(context.getResources(), bmp));
-        //v.setImageBitmap(new BitmapDrawable(context.getResources(), bmp).getBitmap());
-    }
-
-    // Convert transparentColor to be transparent in a Bitmap.
-    public static Bitmap makeTransparent(Bitmap bit, int transparentColor) {
-        int width = bit.getWidth();
-        int height = bit.getHeight();
-        Bitmap myBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
-        int[] allpixels = new int[myBitmap.getHeight() * myBitmap.getWidth()];
-        bit.getPixels(allpixels, 0, myBitmap.getWidth(), 0, 0, myBitmap.getWidth(), myBitmap.getHeight());
-        myBitmap.setPixels(allpixels, 0, width, 0, 0, width, height);
-
-        for (int i = 0; i < myBitmap.getHeight() * myBitmap.getWidth(); i++) {
-            if (allpixels[i] == transparentColor)
-                allpixels[i] = Color.alpha(Color.TRANSPARENT);
-        }
-
-        myBitmap.setPixels(allpixels, 0, myBitmap.getWidth(), 0, 0, myBitmap.getWidth(), myBitmap.getHeight());
-        return myBitmap;
-    }
-
-    public static double getDataReceived() {
-        return (double) TrafficStats.getUidRxBytes(android.os.Process
-                .myUid()) / (1024 * 1024);
-    }
 
     public static int dpToPixels(Context context, float dp) {
         final float scale = context.getResources().getDisplayMetrics().density;

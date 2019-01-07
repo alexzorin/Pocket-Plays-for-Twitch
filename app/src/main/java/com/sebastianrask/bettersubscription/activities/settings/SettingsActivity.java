@@ -101,13 +101,7 @@ public class SettingsActivity extends ThemeActivity implements SRJAdapter.ItemCa
 						R.string.settings_appearance_summary,
 						R.drawable.ic_color_lens_black_48dp,
 						constructCategoryIntent(SettingsAppearanceActivity.class)
-				)/*,
-				new SettingsCategory(
-						R.string.settings_notifications_name,
-						R.string.settings_notifications_summary,
-						R.drawable.ic_notifications_active_black_48dp,
-						constructCategoryIntent(SettingsNotificationsActivity.class)
-				)*/
+				)
 		}));
 	}
 

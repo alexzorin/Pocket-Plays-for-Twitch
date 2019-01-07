@@ -44,7 +44,6 @@ public class GetTwitchUserFollows extends AsyncTask<Object, Void, ArrayList<Chan
 			JSONObject channelObject = followsArray.getJSONObject(j).getJSONObject(CHANNEL_OBJECT_KEY);
 			try {
 				ChannelInfo mChannelInfo = JSONService.getStreamerInfo(channelObject, false);
-				Service.updateStreamerInfoDb(mChannelInfo, baseContext); // Update the current database object
 				followIds.add(mChannelInfo.getUserId());
 			} catch (MalformedURLException e) {
 				e.printStackTrace();
@@ -128,7 +127,6 @@ public class GetTwitchUserFollows extends AsyncTask<Object, Void, ArrayList<Chan
         // If a retrieved follow is not in the loaded streamers - Then add it to the database.
         for(Integer si : loadedStreamerIds) {
             if(!userSubs.contains(si)) {
-                boolean result = Service.deleteStreamerInfoFromDB(baseContext, si);
 				try {
 					for(ChannelInfo info : TempStorage.getLoadedStreamers()) {
 						if(si.equals(info.getUserId()))
@@ -136,12 +134,6 @@ public class GetTwitchUserFollows extends AsyncTask<Object, Void, ArrayList<Chan
 					}
 				} catch (ConcurrentModificationException e) {
 					e.printStackTrace();
-				}
-
-                if(result) {
-					Log.d(LOG_TAG, "Successfully removed " + si + " from database and loadedStreamers");
-				} else {
-					Log.e(LOG_TAG, "Failed to remove " + si + " from database and loadedStreamers");
 				}
             }
         }
@@ -186,16 +178,6 @@ public class GetTwitchUserFollows extends AsyncTask<Object, Void, ArrayList<Chan
 
     @Override
     protected void onPostExecute(ArrayList<ChannelInfo> streamersToAddToDB) {
-		// If there are any streamers to add to the DB - Create a task and do so.
-		if(streamersToAddToDB.size() > 0) {
-			Log.d(LOG_TAG, "Starting task to add " + streamersToAddToDB.size() + " to the db");
-			Object[] arrayTemp = {streamersToAddToDB, baseContext};
-			AddFollowsToDB addFollowsToDBTask = new AddFollowsToDB();
-			addFollowsToDBTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, arrayTemp);
-		} else {
-			Log.d(LOG_TAG, "Found no new streamers to add to the database");
-		}
-
 		long duration = System.currentTimeMillis() - this.timerStart;
 		Log.d(LOG_TAG, "Completed task in " + TimeUnit.MILLISECONDS.toSeconds(duration) + " seconds");
     }

@@ -1,10 +1,7 @@
 package com.sebastianrask.bettersubscription;
 
 import android.annotation.SuppressLint;
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
 import android.content.Context;
-import android.os.Build;
 import androidx.annotation.Nullable;
 import androidx.annotation.StringRes;
 import androidx.multidex.MultiDex;
@@ -23,8 +20,6 @@ public class PocketPlaysApplication extends MultiDexApplication {
     public void onCreate() {
         super.onCreate();
         mContext = this.getApplicationContext();
-
-        initNotificationChannels();
     }
 
     @Override
@@ -34,25 +29,11 @@ public class PocketPlaysApplication extends MultiDexApplication {
     }
 
     public static void trackEvent(@StringRes int category, @StringRes int action, @Nullable String label) {
-        PocketPlaysApplication.trackEvent(mContext.getString(category), mContext.getString(action), label, null);
+        // No-op
     }
 
     public static void trackEvent(String category, String action, @Nullable String label, @Nullable Long value) {
         // No-op
     }
 
-    private void initNotificationChannels() {
-        NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O || notificationManager == null) {
-            return;
-        }
-
-        notificationManager.createNotificationChannel(
-                new NotificationChannel(getString(R.string.live_streamer_notification_id), "New Streamer is live", NotificationManager.IMPORTANCE_LOW)
-        );
-
-        notificationManager.createNotificationChannel(
-                new NotificationChannel(getString(R.string.stream_cast_notification_id), "Stream Playback Control", NotificationManager.IMPORTANCE_DEFAULT)
-        );
-    }
 }

@@ -80,10 +80,6 @@
             android:label="@string/title_activity_streamer_info">
         </activity>
         <activity
-            android:name=".activities.settings.SettingsNotificationsActivity"
-            android:label="@string/settings_notifications_name">
-        </activity>
-        <activity
             android:name=".activities.settings.SettingsGeneralActivity"
             android:label="@string/settings_general_name">
         </activity>
@@ -134,15 +130,6 @@
                 android:value="com.sebastianrask.bettersubscription.activities.setup.WelcomeActivity"/>
         </activity>
         <activity
-            android:name=".activities.setup.NotificationActivity"
-            android:label="@string/title_activity_notification"
-            android:parentActivityName=".activities.setup.LoginActivity"
-            android:screenOrientation="portrait">
-            <meta-data
-                android:name="android.support.PARENT_ACTIVITY"
-                android:value="com.sebastianrask.bettersubscription.activities.setup.LoginActivity"/>
-        </activity>
-        <activity
             android:name=".activities.setup.ConfirmSetupActivity"
             android:label="@string/title_activity_welcome"
             android:screenOrientation="portrait">
@@ -170,8 +157,6 @@
             android:label="@string/title_activity_search">
         </activity>
         <activity android:name=".activities.settings.SettingsStreamPlayerActivity">
-        </activity>
-        <activity android:name=".activities.settings.SettingsPickNotificationsActivity">
         </activity>
         <activity
             android:name=".activities.tests.DeepLinkTestActivity"

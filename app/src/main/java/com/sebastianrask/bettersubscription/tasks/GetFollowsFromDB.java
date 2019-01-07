@@ -5,11 +5,11 @@ import android.os.AsyncTask;
 import android.util.Log;
 
 import com.sebastianrask.bettersubscription.activities.FollowingFetcher;
-import com.sebastianrask.bettersubscription.service.Service;
 import com.sebastianrask.bettersubscription.model.ChannelInfo;
 import com.sebastianrask.bettersubscription.service.Settings;
 import com.sebastianrask.bettersubscription.service.TempStorage;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -37,11 +37,8 @@ public class GetFollowsFromDB extends AsyncTask<Context, Void, Map<String, Chann
     protected Map<String, ChannelInfo> doInBackground(Context... params){
         Log.d(LOG_TAG, "Entered GetSubscriptionsFromDB");
         baseContext = params[0];
-        final boolean INCLUDE_THUMBNAILS = false;
 
-        Map<String, ChannelInfo> resultList = Service.getStreamerInfoFromDB(LOG_TAG, baseContext, INCLUDE_THUMBNAILS);
-        Log.d(LOG_TAG, resultList.size() + " streamers fetched from database");
-        Log.d(LOG_TAG, resultList.toString());
+        Map<String, ChannelInfo> resultList = new HashMap<>();
 
         return resultList;
     }

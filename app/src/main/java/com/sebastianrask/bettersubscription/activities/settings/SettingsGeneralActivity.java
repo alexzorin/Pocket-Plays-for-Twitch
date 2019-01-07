@@ -84,7 +84,6 @@ public class SettingsGeneralActivity extends ThemeActivity {
 				@Override
 				public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
 					dialog.dismiss();
-					Service.clearStreamerInfoDb(getBaseContext());
 					navigateToLogin();
 				}
 			});

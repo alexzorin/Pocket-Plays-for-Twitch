@@ -35,19 +35,6 @@ public class Settings {
 	private final String GENERAL_TWITCH_USER_IS_PARTNER     = "genTwitchUserIsPartner";
 	private final String GENERAL_TWITCH_USER_ID             = "genTwitchUserID";
 
-	private final String NOTIFICATIONS_CHECK_INTERVAL_KEY           = "notCheckInterval";
-	private final String NOTIFICATIONS_VIBRATIONG_KEY               = "notVibration";
-	private final String NOTIFICATIONS_SOUND_KEY                    = "notSound";
-	private final String NOTIFICATIONS_LED_KEY                      = "notLED";
-	private final String NOTIFICATIONS_SCREEM_WAKE_KEY              = "notScreenWake";
-	private final String NOTIFICATIONS_QUIET_HOURS_KEY              = "notQuietHours";
-	private final String NOTIFICATIONS_QUIET_HOURS_START_HOUR       = "notQuietStartHour";
-	private final String NOTIFICATIONS_QUIET_HOURS_START_MINUTE     = "notQuietStartMinute";
-	private final String NOTIFICATIONS_QUIET_HOURS_END_HOUR         = "notQuietEndHour";
-	private final String NOTIFICATIONS_QUIET_HOURS_END_MINUTE       = "notQuietEndMinute";
-	private final String NOTIFICATIONS_IS_DISABLED                  = "notIsDisabled";
-	private final String NOTIFICATIONS_SHOW_IN_QUIET_HOURS 			= "notShowInQuietHours";
-
 	private final String 	STREAM_PLAYER_SHOW_VIEWERCOUNT 	= "streamPlayerShowViewerCount",
 							STREAM_PLAYER_REAVEL_NAVIGATION = "streamPlayerRevealNavigation",
 							STREAM_PLAYER_AUTO_PLAYBACK		= "streamPlayerAutoPlackbackOnReturn";
@@ -83,9 +70,6 @@ public class Settings {
 
 	private final String NOTIFY_LIVE = "notifyUserLive";
 
-	private final String LAST_NOTIFICATIONS_CHECK_LIVESTREAMS = "lastNotificationCheckStreamList";
-	private final String LAST_START_UP_VERSION_CODE = "lastStartUpVersionCode";
-	private final String IS_UPDATED = "hasBeenUpdated";
 	private Context context;
 
 	public Settings(Context context) {
@@ -116,39 +100,6 @@ public class Settings {
 	public <T> T getValue(String key, Type type, T defaultValue) {
 		SharedPreferences preferences = getPreferences();
 		return preferences.contains(key) ? (T) new Gson().fromJson(preferences.getString(key, ""), type) : defaultValue;
-	}
-
-	/***
-	 * Get and set Channel names that were online last notification check.
-	 */
-	public void setLastNotificationCheckLiveChannels(List<StreamInfo> liveChannels) {
-		setValue(LAST_NOTIFICATIONS_CHECK_LIVESTREAMS, liveChannels);
-	}
-
-	public List<StreamInfo> getLastNotificationCheckLiveChannels() {
-		return getValue(LAST_NOTIFICATIONS_CHECK_LIVESTREAMS, new TypeToken<List<StreamInfo>>(){}.getType(), new ArrayList<StreamInfo>());
-	}
-
-	/***
-	 * Get and set if the app has updated
-	 */
-	public void setIsUpdated(boolean updated) {
-		setValue(IS_UPDATED, updated);
-	}
-
-	public boolean getIsUpdated() {
-		return getValue(IS_UPDATED, Boolean.class, false);
-	}
-
-	/***
-	 * Get and set the versioncode for last startup
-	 */
-	public void setLastVersionName(String name) {
-		setValue(LAST_START_UP_VERSION_CODE, name);
-	}
-
-	public String getLastVersionName() {
-		return getValue(LAST_START_UP_VERSION_CODE, String.class, "");
 	}
 
 	/**
@@ -736,180 +687,6 @@ public class Settings {
 		return preferences.getBoolean(this.STREAM_PLAYER_AUTO_PLAYBACK, false);
 	}
 
-
-	/**
-	 * Notification - Is the notifications disabled
-	 */
-
-	public void setNotificationsDisabled(boolean isDisabled) {
-		SharedPreferences.Editor editor = getEditor();
-		editor.putBoolean(this.NOTIFICATIONS_IS_DISABLED, isDisabled);
-		editor.commit();
-	}
-
-	public boolean isNotificationsDisabled() {
-		SharedPreferences preferences = getPreferences();
-		return preferences.getBoolean(this.NOTIFICATIONS_IS_DISABLED, false);
-	}
-
-	/**
-	 * Notification - Should notifications be pushed while in quiet hours
-	 */
-
-	public void setNotificationsShowInQuietHours(boolean showInQuietHours) {
-		SharedPreferences.Editor editor = getEditor();
-		editor.putBoolean(this.NOTIFICATIONS_SHOW_IN_QUIET_HOURS, showInQuietHours);
-		editor.commit();
-	}
-
-	public boolean isNotificationsShowInQuietHours() {
-		SharedPreferences preferences = getPreferences();
-		return preferences.getBoolean(this.NOTIFICATIONS_SHOW_IN_QUIET_HOURS, true);
-	}
-
-	/**
-	 * Notifications - How long between checks for new online streamers
-	 */
-
-	public void setNotificationsCheckInterval(String interval) {
-		SharedPreferences.Editor editor = getEditor();
-		editor.putString(this.NOTIFICATIONS_CHECK_INTERVAL_KEY, interval);
-		editor.commit();
-	}
-
-	public String getNotificationsCheckInterval() {
-		SharedPreferences preferences = getPreferences();
-		return preferences.getString(this.NOTIFICATIONS_CHECK_INTERVAL_KEY, "15");
-	}
-
-	/**
-	 * Notifications - Vibrate or not
-	 */
-
-	public void setNotificationsVibration(boolean vibrate) {
-		SharedPreferences.Editor editor = getEditor();
-		editor.putBoolean(this.NOTIFICATIONS_VIBRATIONG_KEY, vibrate);
-		editor.commit();
-	}
-
-	public boolean getNotificationsVibrations() {
-		SharedPreferences preferences = getPreferences();
-		return preferences.getBoolean(this.NOTIFICATIONS_VIBRATIONG_KEY, true);
-	}
-
-	/**
-	 * Notifications - Play Sound or not
-	 */
-
-	public void setNotificationsSound(boolean playSound) {
-		SharedPreferences.Editor editor = getEditor();
-		editor.putBoolean(this.NOTIFICATIONS_SOUND_KEY, playSound);
-		editor.commit();
-	}
-
-	public boolean getNotificationsSound() {
-		SharedPreferences preferences = getPreferences();
-		return preferences.getBoolean(this.NOTIFICATIONS_SOUND_KEY, false);
-	}
-
-	/**
-	 * Notifications - Wake Screen or not
-	 */
-
-	public void setNotificationsScreenWake(boolean wake) {
-		SharedPreferences.Editor editor = getEditor();
-		editor.putBoolean(this.NOTIFICATIONS_SCREEM_WAKE_KEY, wake);
-		editor.commit();
-	}
-
-	public boolean getNotificationsScreenWake() {
-		SharedPreferences preferences = getPreferences();
-		return preferences.getBoolean(this.NOTIFICATIONS_SCREEM_WAKE_KEY, true);
-	}
-
-	/**
-	 * Notifications - Blink LED or not
-	 */
-
-	public void setNotificationsLED(boolean blinkLED) {
-		SharedPreferences.Editor editor = getEditor();
-		editor.putBoolean(this.NOTIFICATIONS_LED_KEY, blinkLED);
-		editor.commit();
-	}
-
-	public boolean getNotificationsLED() {
-		SharedPreferences preferences = getPreferences();
-		return preferences.getBoolean(this.NOTIFICATIONS_LED_KEY, false);
-	}
-
-	/**
-	 * Notifications - Enable Quiet Hours or not
-	 */
-
-	public void setNotificationsQuietHours(boolean enable) {
-		SharedPreferences.Editor editor = getEditor();
-		editor.putBoolean(this.NOTIFICATIONS_QUIET_HOURS_KEY, enable);
-		editor.commit();
-	}
-
-	public boolean getNotificationsQuietHours() {
-		SharedPreferences preferences = getPreferences();
-		return preferences.getBoolean(this.NOTIFICATIONS_QUIET_HOURS_KEY, false);
-	}
-
-	/**
-	 * Notifications
-	 * Quiet Hours - Start Time
-	 */
-
-	public void setNotificationsQuietStartHour(int hour) {
-		SharedPreferences.Editor editor = getEditor();
-		editor.putInt(this.NOTIFICATIONS_QUIET_HOURS_START_HOUR, hour);
-		editor.commit();
-	}
-
-	public int getNotificationsQuietStartHour() {
-		SharedPreferences preferences = getPreferences();
-		return preferences.getInt(this.NOTIFICATIONS_QUIET_HOURS_START_HOUR, 22);
-	}
-
-	public void setNotificationsQuietStartMinute(int minute) {
-		SharedPreferences.Editor editor = getEditor();
-		editor.putInt(this.NOTIFICATIONS_QUIET_HOURS_START_MINUTE, minute);
-		editor.commit();
-	}
-
-	public int getNotificationsQuietStartMinute() {
-		SharedPreferences preferences = getPreferences();
-		return preferences.getInt(this.NOTIFICATIONS_QUIET_HOURS_START_MINUTE, 00);
-	}
-
-	/**
-	 * Notifications
-	 * Quiet Hours - End Time
-	 */
-	public void setNotificationsQuietEndHour(int hour) {
-		SharedPreferences.Editor editor = getEditor();
-		editor.putInt(this.NOTIFICATIONS_QUIET_HOURS_END_HOUR, hour);
-		editor.commit();
-	}
-
-	public int getNotificationsQuietEndHour() {
-		SharedPreferences preferences = getPreferences();
-		return preferences.getInt(this.NOTIFICATIONS_QUIET_HOURS_END_HOUR, 10);
-	}
-
-	public void setNotificationsQuietEndMinute(int minute) {
-		SharedPreferences.Editor editor = getEditor();
-		editor.putInt(this.NOTIFICATIONS_QUIET_HOURS_END_MINUTE, minute);
-		editor.commit();
-	}
-
-	public int getNotificationsQuietEndMinute() {
-		SharedPreferences preferences = getPreferences();
-		return preferences.getInt(this.NOTIFICATIONS_QUIET_HOURS_END_MINUTE, 00);
-	}
-
 	/**
 	 * Setup
 	 */
@@ -931,9 +708,6 @@ public class Settings {
 	 */
 
 	public void setLogin(boolean isLoggedIn) {
-		if (!isLoggedIn) {
-			Service.clearStreamerInfoDb(context);
-		}
 		SharedPreferences.Editor editor = getEditor();
 		editor.putBoolean(this.SETUP_IS_LOGGED_IN, isLoggedIn);
 		editor.commit();

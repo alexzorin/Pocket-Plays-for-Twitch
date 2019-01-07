@@ -4,7 +4,6 @@ import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
-import androidx.core.app.ActivityCompat;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.TypedValue;
@@ -35,6 +34,7 @@ import com.rey.material.widget.SnackBar;
 import com.sebastianrask.bettersubscription.PocketPlaysApplication;
 import com.sebastianrask.bettersubscription.R;
 import com.sebastianrask.bettersubscription.activities.UsageTrackingAppCompatActivity;
+import com.sebastianrask.bettersubscription.activities.main.MyStreamsActivity;
 import com.sebastianrask.bettersubscription.service.Service;
 import com.sebastianrask.bettersubscription.service.Settings;
 import com.sebastianrask.bettersubscription.tasks.GetFollowsFromDB;
@@ -460,22 +460,16 @@ public class LoginActivity extends UsageTrackingAppCompatActivity {
 		return hideViewAnimation(mLoginTextLineTwo, HIDE_VIEW_ANIMATION_DURATION);
 	}
 
-	private void navigateToNotificationActivity() {
-		// Go to the login activity, with no transition.
+	private void navigateToNextActivity() {
 		hasTransitioned = true;
-		if (!isPartOfSetup) {
-			if(!LoginActivity.hasLoadedFollows()) {
-				this.startActivity(new Intent(getBaseContext(), ConfirmSetupActivity.class));
-				this.overridePendingTransition(0, 0);
-			} else {
-				this.startActivity(Service.getLoggedInIntent(getBaseContext()));
-				this.overridePendingTransition(0, 0);
-			}
-
+		Settings settings = new Settings(getBaseContext());
+		settings.setSetup(true);
+		if(!LoginActivity.hasLoadedFollows()) {
+			this.startActivity(new Intent(getBaseContext(), ConfirmSetupActivity.class));
+			this.overridePendingTransition(0, 0);
 		} else {
-			Intent loginActivityIntent = new Intent(getBaseContext(), NotificationActivity.class);
-			loginActivityIntent.addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
-			ActivityCompat.startActivity(this, loginActivityIntent, null);
+			this.startActivity(new Intent(getBaseContext(), MyStreamsActivity.class));
+			this.overridePendingTransition(0, 0);
 		}
 	}
 
@@ -619,8 +613,8 @@ public class LoginActivity extends UsageTrackingAppCompatActivity {
 		new Handler().postDelayed(new Runnable() {
 			@Override
 			public void run() {
-				Log.d(LOG_TAG, "Navigating to NotificationActivity");
-				navigateToNotificationActivity();
+				Log.d(LOG_TAG, "Navigating to next activity");
+				navigateToNextActivity();
 			}
 		}, REVEAL_ANIMATION_DELAY + REVEAL_ANIMATION_DURATION);
 	}
