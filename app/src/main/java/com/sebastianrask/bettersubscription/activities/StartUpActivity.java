@@ -29,10 +29,6 @@ public class StartUpActivity extends ThemeActivity {
 				//validateToken();
 				intent = Service.getLoggedInIntent(getBaseContext());
 			}
-
-			if (!settings.isNotificationsDisabled()) {
-				Service.startNotifications(getBaseContext());
-			}
 		} else {
 			intent = new Intent(getBaseContext(), WelcomeActivity.class);
 		}

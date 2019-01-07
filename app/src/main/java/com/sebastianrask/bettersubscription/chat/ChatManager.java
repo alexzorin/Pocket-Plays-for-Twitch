@@ -218,8 +218,6 @@ public class ChatManager extends AsyncTask<Void, ChatManager.ProgressUpdate, Voi
 
 				final IRCv3Message msg = IRCv3Message.parse(line);
 				if (msg != null) {
-					Log.d(LOG_TAG, msg.toString());
-
 					switch (msg.getCommand()) {
 						case "004":
 							onProgressUpdate(new ProgressUpdate(ProgressUpdate.UpdateType.ON_CONNECTED));

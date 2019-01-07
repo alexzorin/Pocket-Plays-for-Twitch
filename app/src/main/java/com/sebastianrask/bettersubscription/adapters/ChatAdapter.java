@@ -252,7 +252,6 @@ public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.ContactViewHol
 			checkSize();
 			mRecyclerView.scrollToPosition(messages.size() - 1);
 		}
-		Log.d(LOG_TAG, "Adding Message " + message.getMessage());
 	}
 
 	/**

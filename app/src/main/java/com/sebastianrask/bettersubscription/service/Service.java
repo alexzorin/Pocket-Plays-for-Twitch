@@ -3,10 +3,7 @@ package com.sebastianrask.bettersubscription.service;
 import android.animation.Animator;
 import android.animation.ArgbEvaluator;
 import android.animation.ObjectAnimator;
-import android.annotation.SuppressLint;
 import android.app.Activity;
-import android.app.AlarmManager;
-import android.app.PendingIntent;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
@@ -32,20 +29,16 @@ import android.graphics.drawable.Drawable;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.TrafficStats;
-import android.net.Uri;
-import android.os.Build;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.TypedValue;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.Window;
 import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 
-import com.sebastianrask.bettersubscription.PocketPlaysApplication;
 import com.sebastianrask.bettersubscription.R;
 import com.sebastianrask.bettersubscription.activities.main.FeaturedStreamsActivity;
 import com.sebastianrask.bettersubscription.activities.main.MyChannelsActivity;
@@ -58,13 +51,11 @@ import com.sebastianrask.bettersubscription.model.ChannelInfo;
 
 import org.json.JSONException;
 import org.json.JSONObject;
-
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.lang.reflect.Field;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
@@ -73,21 +64,10 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Map;
 import java.util.Random;
-import java.util.Scanner;
 import java.util.TreeMap;
-
-import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.HttpsURLConnection;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSession;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
-import javax.security.cert.CertificateException;
-import javax.security.cert.X509Certificate;
 
 import androidx.annotation.AttrRes;
 import androidx.annotation.ColorRes;
-import androidx.annotation.Nullable;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.content.ContextCompat;
 import androidx.customview.widget.ViewDragHelper;
@@ -100,13 +80,7 @@ import androidx.drawerlayout.widget.DrawerLayout;
 // TODO: Split this service out to multiple more cohesive service classes
 public class Service {
 
-    // always verify the host - dont check for certificate
-    public final static HostnameVerifier DO_NOT_VERIFY = new HostnameVerifier() {
-        @SuppressLint("BadHostnameVerifier")
-        public boolean verify(String hostname, SSLSession session) {
-            return true;
-        }
-    };
+    private static final String LOG_TAG = Service.class.getSimpleName();
 
     /**
      * Returns the Twitch Client ID
@@ -498,35 +472,6 @@ public class Service {
     }
 
     /**
-     * Checks if the device is connected to a valid network
-     * Can be called on the UI thread
-     */
-    public static boolean isNetWorkConnected(Context context) {
-        ConnectivityManager cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
-        NetworkInfo networkInfo = cm.getActiveNetworkInfo();
-
-        return networkInfo != null && networkInfo.isConnectedOrConnecting();
-    }
-
-    public static int NOTIFICATION_ALARM_ID = 754641782;
-
-    public static void startNotifications(Context context) {
-    }
-
-    public static void isTranslucentActionbar(String LOG_TAG, Context context, Toolbar toolbar, Activity activity) {
-        if (Build.VERSION.SDK_INT == Build.VERSION_CODES.KITKAT) {
-            Log.d(LOG_TAG, "Settings translucent status bar");
-
-            double statusBarHeight = Math.ceil(25 * context.getResources().getDisplayMetrics().density);
-
-            Window w = activity.getWindow(); // in Activity's onCreate() for instance
-            //w.setFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION, WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION);
-            w.setFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS, WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
-            toolbar.getLayoutParams().height = (int) (context.getResources().getDimension((R.dimen.main_toolbar_height)) + statusBarHeight);
-        }
-    }
-
-    /**
      * Does the opposite of the View.bringToFront() method
      *
      * @param v the view you want to send to the back
@@ -540,16 +485,15 @@ public class Service {
     }
 
     public static void saveImageToStorage(Bitmap image, String key, Context context) {
-        try {
+        try (ByteArrayOutputStream byteStream = new ByteArrayOutputStream()) {
             // Create an ByteArrayOutputStream and feed a compressed bitmap image in it
-            ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
             image.compress(Bitmap.CompressFormat.PNG, 100, byteStream); // PNG as only format with transparency
 
             // Create a FileOutputStream with out key and set the mode to private to ensure
             // Only this app and read the file. Write out ByteArrayOutput to the file and close it
-            FileOutputStream fileOut = context.openFileOutput(key, Context.MODE_PRIVATE);
-            fileOut.write(byteStream.toByteArray());
-            byteStream.close();
+            try (FileOutputStream fileOut = context.openFileOutput(key, Context.MODE_PRIVATE)) {
+                fileOut.write(byteStream.toByteArray());
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -598,96 +542,34 @@ public class Service {
     }
 
     public static String urlToJSONString(String urlToRead) {
-        URL url;
-        HttpURLConnection conn = null;
-        Scanner in = null;
-        String result = "";
+        final ByteArrayOutputStream os = new ByteArrayOutputStream();
 
         try {
-            url = new URL(urlToRead);
-
-            conn = openConnection(url);
+            final HttpURLConnection conn = openConnection(new URL(urlToRead));
 
             conn.setReadTimeout(5000);
             conn.setConnectTimeout(3000);
             conn.setRequestProperty("Client-ID", Service.getApplicationClientID());
             conn.setRequestProperty("Accept", "application/vnd.twitchtv.v5+json");
             conn.setRequestMethod("GET");
-            in = new Scanner(new InputStreamReader(conn.getInputStream()));
 
-            while (in.hasNextLine()) {
-                String line = in.nextLine();
-                result += line;
+            try (InputStream is = conn.getInputStream()) {
+                byte[] buf = new byte[8192];
+                int length, off = 0;
+                while ((length = is.read(buf)) != -1) {
+                    os.write(buf, 0, length);
+                }
             }
 
-            in.close();
-            conn.disconnect();
+            return os.toString();
         } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            if (in != null)
-                in.close();
-            if (conn != null)
-                conn.disconnect();
+            Log.d(LOG_TAG, "Failed to fetch " + urlToRead, e);
+            return null;
         }
-
-        if (result.length() == 0 || (result.length() >= 1 && result.charAt(0) != '{')) {
-            Log.v("URL TO JSON STRING", urlToRead + " did not successfully get read");
-            Log.v("URL TO JSON STRING", "Result of reading - " + result);
-        }
-
-        return result;
     }
 
     public static HttpURLConnection openConnection(URL url) throws IOException {
-//        HttpURLConnection conn = null;
-//
-//        if (url.getProtocol().toLowerCase().equals("https")) {
-//            trustAllHosts();
-//            HttpsURLConnection https = (HttpsURLConnection) url.openConnection();
-//            https.setHostnameVerifier(DO_NOT_VERIFY);
-//            conn = https;
-//        } else {
-//            conn = (HttpURLConnection) url.openConnection();
-//        }
-//
-//        return conn;
-
         return (HttpURLConnection) url.openConnection();
-    }
-
-    /**
-     * Trust every server - dont check for any certificate
-     */
-    public static void trustAllHosts() {
-        // Create a trust manager that does not validate certificate chains
-        TrustManager[] trustAllCerts = new TrustManager[]{
-                new X509TrustManager() {
-                    @Override
-                    public void checkClientTrusted(java.security.cert.X509Certificate[] x509Certificates, String s) throws java.security.cert.CertificateException {
-
-                    }
-
-                    @Override
-                    public void checkServerTrusted(java.security.cert.X509Certificate[] x509Certificates, String s) throws java.security.cert.CertificateException {
-
-                    }
-
-                    public java.security.cert.X509Certificate[] getAcceptedIssuers() {
-                        return new java.security.cert.X509Certificate[]{};
-                    }
-                }
-        };
-
-        // Install the all-trusting trust manager
-        try {
-            SSLContext sc = SSLContext.getInstance("TLS");
-            sc.init(null, trustAllCerts, new java.security.SecureRandom());
-            HttpsURLConnection
-                    .setDefaultSSLSocketFactory(sc.getSocketFactory());
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
     }
 
     public static ChannelInfo getStreamerInfoFromUserId(int streamerId) throws NullPointerException {
@@ -978,22 +860,15 @@ public class Service {
      * Must not be called on Main UI Thread
      */
     public static Bitmap getBitmapFromUrl(String url) {
-        Bitmap bitmap = null;
-
         try {
-            HttpURLConnection connection = openConnection(new URL(url));
+            final HttpURLConnection connection = openConnection(new URL(url));
             connection.connect();
-            InputStream input = connection.getInputStream();
-            bitmap = BitmapFactory.decodeStream(input);
-
-        } catch (Exception e) {
-            //e.printStackTrace();
-
-            if (url.contains("https")) {
-                return getBitmapFromUrl(url.replace("https", "http"));
+            try(final InputStream is = connection.getInputStream()) {
+                return BitmapFactory.decodeStream(is);
             }
+        } catch (Exception e) {
+            Log.d(LOG_TAG, "Failed to fetch bitmap " + url, e);
+            return null;
         }
-
-        return bitmap;
     }
 }

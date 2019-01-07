@@ -141,8 +141,9 @@ public class JSONService {
 						JSONObject JSONStringTwo = new JSONObject(Service.urlToJSONString(descriptionURL));
 						String asyncDescription = JSONStringTwo.isNull(BIO_STRING) ? "" : JSONStringTwo.getString(BIO_STRING);
 						channelInfo.setStreamDescription(asyncDescription);
-					} catch (JSONException e) {
-						e.printStackTrace();
+					} catch (Exception e) {
+						Log.d(LOG_TAG, "Failed to load channel description for " + userId,
+								e);
 					}
 				}
 			}).start();
