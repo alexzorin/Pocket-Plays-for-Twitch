@@ -98,11 +98,10 @@ public abstract class MainActivityAdapter<E extends Comparable<E> & MainElement,
 			return;
 		}
 		View viewToInsert = viewHolder.getElementWrapper();
-		String previewURL = element.getMediumPreview();
 
 		initElementStyle(viewHolder);
 		setViewData(element, viewHolder);
-		loadImagePreview(previewURL, element, viewHolder);
+		loadImagePreview(element.getMediumPreview(), element, viewHolder);
 		setViewLayoutParams(viewToInsert, position);
 		adapterSpecial(viewHolder);
 		animateInsert(position, viewToInsert);
@@ -144,54 +143,46 @@ public abstract class MainActivityAdapter<E extends Comparable<E> & MainElement,
 
 	protected void loadImagePreview(String previewURL, E element, final ElementsViewHolder viewHolder) {
 		if(previewURL != null && !previewURL.isEmpty()) {
-			if (previewURL.contains("https")) {
-				previewURL = previewURL.replace("https", "http");
-			}
-
 			RequestCreator creator =
 					Picasso.with(context)
-							.load(previewURL)
+							.load(previewURL + "?ts=" + System.currentTimeMillis())
 							.placeholder(ContextCompat.getDrawable(context, element.getPlaceHolder(getContext())));
 
 			if(isBelowLollipop) {
 				creator.transform(new RoundedTopTransformation(context.getResources().getDimension(getCornerRadiusRessource())));
 			}
 
-			if(mTargets.get(viewHolder.getTargetsKey()) != null) {
-				viewHolder.getPreviewView().setImageBitmap(mTargets.get(viewHolder.getTargetsKey()).getPreview());
-			} else {
-				PreviewTarget mTarget = new PreviewTarget() {
-					private boolean loaded = false;
+			PreviewTarget mTarget = new PreviewTarget() {
+				private boolean loaded = false;
 
-					@Override
-					public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom from) {
-						if(!loaded) {
-							loaded = true;
+				@Override
+				public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom from) {
+					Log.d(LOG_TAG, "onBitmapLoaded, loaded=" + loaded);
+					if(!loaded) {
+						loaded = true;
 
-							if (removeBlackbars) {
-								bitmap = Service.removeBlackBars(bitmap);
-							}
-
-							AnimationService.setPicassoShowImageAnimationTwo(viewHolder.getPreviewView(), bitmap, context);
-							setPreview(bitmap);
+						if (removeBlackbars) {
+							bitmap = Service.removeBlackBars(bitmap);
 						}
+
+						AnimationService.setPicassoShowImageAnimationTwo(viewHolder.getPreviewView(), bitmap, context);
+						setPreview(bitmap);
 					}
+				}
 
-					@Override
-					public void onBitmapFailed(Drawable errorDrawable) {
+				@Override
+				public void onBitmapFailed(Drawable errorDrawable) {
 
-					}
+				}
 
-					@Override
-					public void onPrepareLoad(Drawable placeHolderDrawable) {
-						viewHolder.getPreviewView().setImageDrawable(placeHolderDrawable);
-					}
-				};
+				@Override
+				public void onPrepareLoad(Drawable placeHolderDrawable) {
+					viewHolder.getPreviewView().setImageDrawable(placeHolderDrawable);
+				}
+			};
 
-				creator.into(mTarget);
-				mTargets.put(viewHolder.getTargetsKey(), mTarget);
-			}
-
+			creator.into(mTarget);
+			mTargets.put(viewHolder.getTargetsKey(), mTarget);
 		} else {
 			viewHolder.getPreviewView().setImageDrawable(ContextCompat.getDrawable(context, element.getPlaceHolder(getContext())));
 		}

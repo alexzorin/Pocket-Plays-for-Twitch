@@ -52,13 +52,15 @@ public class MyStreamsActivity extends LazyMainActivity<StreamInfo> {
 
 	@Override
 	public List<StreamInfo> getVisualElements() throws JSONException, MalformedURLException {
-		final String URL = "https://api.twitch.tv/kraken/streams/followed?oauth_token=" + new Settings(getBaseContext()).getGeneralTwitchAccessToken() + "&limit="+ getLimit() + "&offset=" + getCurrentOffset() + "&stream_type=live";
+		final String u = "https://api.twitch.tv/kraken/streams/followed?oauth_token=" +
+				new Settings(getBaseContext()).getGeneralTwitchAccessToken() + "&limit="+
+				getLimit()+ "&offset=" + getCurrentOffset() + "&stream_type=live";
+
 		final String ARRAY_KEY = "streams";
 		final String TOTAL_STREAMS_INT = "_total";
 
 		List<StreamInfo> mResultList = new ArrayList<>();
-		String jsonString = Service.urlToJSONString(URL);
-		JSONObject fullDataObject = new JSONObject(jsonString);
+		JSONObject fullDataObject = new JSONObject(Service.urlToJSONString(u));
 		JSONArray topStreamsArray = fullDataObject.getJSONArray(ARRAY_KEY);
 
 		Log.d(LOG_TAG, "Total elements: " + fullDataObject.getInt(TOTAL_STREAMS_INT));

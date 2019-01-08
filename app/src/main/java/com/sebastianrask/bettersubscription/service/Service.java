@@ -271,24 +271,6 @@ public class Service {
     }
 
     /**
-     * Decodes a byte array to a bitmap and returns it.
-     */
-    public static Bitmap getBitmapFromByteArray(byte[] bytes) {
-        return BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
-    }
-
-    /**
-     * Creates a byte-array for a drawable and returns it.
-     * This is useful for sending images with intents.
-     */
-    public static byte[] getDrawableByteArray(Drawable aDrawable) {
-        Bitmap bitmap = drawableToBitmap(aDrawable);
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        bitmap.compress(Bitmap.CompressFormat.PNG, 100, baos);
-        return baos.toByteArray();
-    }
-
-    /**
      * Converts a drawable to a bitmap and returns it.
      */
     public static Bitmap drawableToBitmap(Drawable drawable) {
@@ -371,14 +353,6 @@ public class Service {
 
         return color;
     }
-
-    /**
-     * Returns a resized bitmap with a spcified factor to change the width and height with.
-     */
-    public static Bitmap getResizedBitmap(Bitmap bm, float factorchange) {
-        return getResizedBitmap(bm, (int) (bm.getWidth() * factorchange), (int) (bm.getHeight() * factorchange));
-    }
-
 
     /**
      * Creates a new resized bitmap with a specified width and height.

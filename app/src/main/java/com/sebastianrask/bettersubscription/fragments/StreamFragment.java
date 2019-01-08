@@ -856,7 +856,8 @@ public class StreamFragment extends Fragment {
                 return;
             }
 
-            RequestCreator creator = Picasso.with(getContext()).load(imageUrl);
+            RequestCreator creator = Picasso.with(getContext()).load(imageUrl + "?ts=" +
+                    System.currentTimeMillis());
             Target target = new Target() {
                 @Override
                 public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom from) {
