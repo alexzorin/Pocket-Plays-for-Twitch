@@ -1,50 +1,41 @@
 package com.sebastianrask.bettersubscription.tasks;
 
 import android.os.AsyncTask;
+import android.util.Log;
+import android.util.Pair;
 
-import java.io.IOException;
-import java.net.HttpURLConnection;
-import java.net.URL;
+import com.sebastianrask.bettersubscription.misc.FollowHandler;
+import com.sebastianrask.bettersubscription.service.Service;
 
 /**
  * Created by Sebastian Rask on 19-04-2016.
  */
-public class CheckFollowingTask extends AsyncTask<String, Void, Boolean> {
-	private final int USER_NOT_FOLLOWING_CODE = 404;
-	private String LOG_TAG = getClass().getSimpleName();
-	private TaskCallBack callBack;
+public class CheckFollowingTask extends AsyncTask<Pair<Integer, Integer>, Void, Boolean> {
 
-	public CheckFollowingTask(TaskCallBack callBack) {
-		this.callBack = callBack;
+	private String LOG_TAG = getClass().getSimpleName();
+
+	private boolean isFollowed;
+	private TaskCallback callback;
+
+	public CheckFollowingTask(TaskCallback callback) {
+		this.callback = callback;
 	}
 
 	@Override
-	protected Boolean doInBackground(String... params) {
-		URL url = null;
-		try {
-			String urlString = params[0];
-			url = new URL(urlString);
-			HttpURLConnection httpCon = (HttpURLConnection) url.openConnection();
-			httpCon.setRequestMethod("GET");
-			httpCon.connect();
-
-			int response = httpCon.getResponseCode();
-
-			return response != USER_NOT_FOLLOWING_CODE;
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-
-		return false;
+	protected Boolean doInBackground(Pair<Integer, Integer>... params) {
+		isFollowed = Service.isUserFollowingStreamer(params[0].first, params[0].second);
+		return isFollowed;
 	}
 
 	@Override
 	protected void onPostExecute(Boolean aBoolean) {
+		if (callback != null) {
+			callback.onTaskDone(isFollowed);
+		}
 		super.onPostExecute(aBoolean);
-		callBack.onTaskDone(aBoolean);
 	}
 
-	public interface TaskCallBack {
+	public interface TaskCallback {
 		void onTaskDone(Boolean result);
 	}
 }

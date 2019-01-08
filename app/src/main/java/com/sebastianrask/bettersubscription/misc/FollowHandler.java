@@ -2,11 +2,15 @@ package com.sebastianrask.bettersubscription.misc;
 
 import android.content.Context;
 import android.os.AsyncTask;
+import android.util.Log;
+import android.util.Pair;
 
 import com.sebastianrask.bettersubscription.model.ChannelInfo;
 import com.sebastianrask.bettersubscription.service.Service;
 import com.sebastianrask.bettersubscription.service.Settings;
+import com.sebastianrask.bettersubscription.tasks.CheckFollowingTask;
 import com.sebastianrask.bettersubscription.tasks.FollowTask;
+import com.sebastianrask.bettersubscription.tasks.GetTwitchUserFollows;
 import com.sebastianrask.bettersubscription.tasks.UnfollowTask;
 
 /**
@@ -29,16 +33,24 @@ public class FollowHandler {
 	}
 
 	private void init() {
-		if (!new Settings(mContext).isLoggedIn()) {
+		final Settings s = new Settings(mContext);
+		if (!s.isLoggedIn()) {
 			mDelegate.userIsNotLoggedIn();
 		} else {
-			boolean isUserFollowed = Service.isUserFollowingStreamer(mChannelInfo.getStreamerName(), mContext);
-			if (isUserFollowed) {
-				mDelegate.streamerIsFollowed();
-				isStreamerFollowed = true;
-			} else {
-				mDelegate.streamerIsNotFollowed();
-			}
+			final CheckFollowingTask task = new CheckFollowingTask(new CheckFollowingTask.TaskCallback() {
+				@Override
+				public void onTaskDone(Boolean result) {
+					if (result) {
+						mDelegate.streamerIsFollowed();
+						isStreamerFollowed = true;
+					} else {
+						mDelegate.streamerIsNotFollowed();
+						isStreamerFollowed = false;
+					}
+				}
+			});
+			task.executeOnExecutor(AsyncTask.SERIAL_EXECUTOR,
+					new Pair<>(s.getGeneralTwitchUserID(), mChannelInfo.getUserId()));
 		}
 	}
 

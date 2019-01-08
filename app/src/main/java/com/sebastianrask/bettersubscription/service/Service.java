@@ -577,7 +577,17 @@ public class Service {
     /**
      * Determines whether or not the user is currently following a streamer.
      */
-    public static boolean isUserFollowingStreamer(String streamername, Context context) {
+    public static boolean isUserFollowingStreamer(int fromID, int toID) {
+        final String url = String.format("https://api.twitch.tv/helix/users/follows?" +
+                "from_id=%d&to_id=%d", fromID, toID);
+
+        try {
+            final JSONObject root = new JSONObject(urlToJSONString(url));
+            return root.getInt("total") > 0;
+        } catch(Exception e) {
+            Log.d(LOG_TAG, String.format("Failed to check if %d follows %d", fromID, toID), e);
+        }
+
         return false;
     }
 

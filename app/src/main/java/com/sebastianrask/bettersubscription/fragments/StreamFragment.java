@@ -1522,10 +1522,12 @@ public class StreamFragment extends Fragment {
                 new FollowHandler.Delegate() {
                     @Override
                     public void streamerIsFollowed() {
+                        updateFollowIcon(imageView, true);
                     }
 
                     @Override
                     public void streamerIsNotFollowed() {
+                        updateFollowIcon(imageView, false);
                     }
 
                     @Override
@@ -1550,7 +1552,6 @@ public class StreamFragment extends Fragment {
                     }
                 }
         );
-        updateFollowIcon(imageView, mFollowHandler.isStreamerFollowed());
 
         imageView.setOnClickListener(new View.OnClickListener() {
             @Override
