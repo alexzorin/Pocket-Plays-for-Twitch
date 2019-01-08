@@ -14,6 +14,7 @@ It differs in these ways:
 - Enforces TLS for chat connections
 - Support global and channel badges (e.g. subscription streaks)
 - Displays sub/resub/gift notices
+- Stream preview refresh works
 
 It is not published on any app stores.
 
