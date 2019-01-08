@@ -317,9 +317,9 @@ public class ChatManager extends AsyncTask<Void, ChatManager.ProgressUpdate, Voi
 	 * @param msg
 	 */
 	private void handleRoomstate(final IRCv3Message msg) {
-		chatIsR9kmode = msg.getTag("r9k").equals("1");
-		chatIsSlowmode= msg.getTag("slow").equals("1");
-		chatIsSubsonlymode = msg.getTag("subs-only").equals("1");
+		chatIsR9kmode = "1".equals(msg.getTag("r9k"));
+		chatIsSlowmode= "1".equals(msg.getTag("slow"));
+		chatIsSubsonlymode = "1".equals(msg.getTag("subs-only"));
 	}
 
 	/**

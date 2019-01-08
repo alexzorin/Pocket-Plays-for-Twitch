@@ -2,6 +2,9 @@ package com.sebastianrask.bettersubscription;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+
+import com.sebastianrask.bettersubscription.misc.FileLoggingExceptionHandler;
+
 import androidx.annotation.Nullable;
 import androidx.annotation.StringRes;
 import androidx.multidex.MultiDex;
@@ -20,6 +23,7 @@ public class PocketPlaysApplication extends MultiDexApplication {
     public void onCreate() {
         super.onCreate();
         mContext = this.getApplicationContext();
+        new FileLoggingExceptionHandler(this);
     }
 
     @Override
