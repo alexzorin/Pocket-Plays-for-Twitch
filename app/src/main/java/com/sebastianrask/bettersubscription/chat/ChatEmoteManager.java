@@ -101,7 +101,11 @@ public class ChatEmoteManager {
                     emotesPattern += "|" + Pattern.quote(emoteKeyword);
                 }
             }
+        } catch (Exception e) {
+            Log.d(LOG_TAG, "Failed to fetch BTTV global emotes", e);
+        }
 
+        try {
             JSONObject topChannelEmotes = new JSONObject(Service.urlToJSONString(BASE_CHANNEL_URL));
             JSONArray channelEmotes = topChannelEmotes.getJSONArray(EMOTE_ARRAY);
             for (int i = 0; i < channelEmotes.length(); i++) {
@@ -122,10 +126,8 @@ public class ChatEmoteManager {
                     emotesPattern += "|" + Pattern.quote(emoteKeyword);
                 }
             }
-
-
-        } catch (JSONException e) {
-            e.printStackTrace();
+        } catch (Exception e) {
+            Log.d(LOG_TAG, "Failed to fetch BTTV channel emotes", e);
         }
 
         bttvEmotesPattern = Pattern.compile("\\b(" + emotesPattern + ")\\b");

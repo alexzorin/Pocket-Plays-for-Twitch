@@ -4,8 +4,7 @@ import android.content.Context;
 import android.util.Log;
 
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.PrintWriter;
+import java.io.PrintStream;
 
 public class FileLoggingExceptionHandler implements Thread.UncaughtExceptionHandler {
 
@@ -24,8 +23,8 @@ public class FileLoggingExceptionHandler implements Thread.UncaughtExceptionHand
     public void uncaughtException(Thread thread, Throwable throwable) {
         try {
            final File f = new File(ctx.getFilesDir(), "POCKET_PLAYS_CRASHFILE");
-           try (PrintWriter w = new PrintWriter(new FileOutputStream(f, true))) {
-               throwable.printStackTrace(w);
+           try (PrintStream ps = new PrintStream(f)) {
+               throwable.printStackTrace(ps);
            }
            Log.d(LOG_TAG, "Logged exception to file: " + f.getAbsolutePath());
         } catch (Exception e) {
