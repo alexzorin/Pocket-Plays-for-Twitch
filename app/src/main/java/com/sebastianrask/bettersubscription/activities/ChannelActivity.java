@@ -490,7 +490,7 @@ public class ChannelActivity extends ThemeActivity {
 		}
 
 		mLoadingTarget = mTarget;
-		Picasso.with(getBaseContext())
+		Picasso.get()
 				.load(info.getMediumPreview() + "?ts=" + System.currentTimeMillis())
 				.into(mTarget);
 	}
@@ -503,7 +503,7 @@ public class ChannelActivity extends ThemeActivity {
 			}
 
 			@Override
-			public void onBitmapFailed(Drawable errorDrawable) {
+			public void onBitmapFailed(Exception e, Drawable errorDrawable) {
 
 			}
 
@@ -576,7 +576,7 @@ public class ChannelActivity extends ThemeActivity {
 			}
 
 			@Override
-			public void onBitmapFailed(Drawable errorDrawable) {}
+			public void onBitmapFailed(Exception e, Drawable errorDrawable) {}
 
 			@Override
 			public void onPrepareLoad(Drawable placeHolderDrawable) {}

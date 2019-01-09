@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    android:orientation="horizontal"
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <RelativeLayout
+        android:id="@+id/my_channels_container"
+        style="@style/navigation_drawer_item_container">
+
+        <com.sebastianrask.bettersubscription.views.DynamicImageView
+            style="@style/icon_navigation_drawer_stream"
+            android:id="@+id/nav_stream_image"
+            android:src="@drawable/ic_channels" />
+
+        <TextView
+            style="@style/text_navigation_drawer"
+            android:id="@+id/nav_stream_text"
+            android:text="@string/stream_fragment_name" />
+
+        <FrameLayout
+            android:layout_marginRight="@dimen/navigation_drawer_icon_left_margin"
+            android:layout_marginEnd="@dimen/navigation_drawer_icon_left_margin"
+            android:layout_alignParentRight="true"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:layout_width="wrap_content"
+            android:layout_height="@dimen/navigation_drawer_icon_size">
+            <TextView
+                android:id="@+id/text_navigation_drawer_stream_count"
+                android:layout_gravity="center"
+                android:paddingLeft="16dp"
+                android:paddingRight="16dp"
+                android:textColor="?attr/navigationDrawerTextColor"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+        </FrameLayout>
+    </RelativeLayout>
+
+</RelativeLayout>

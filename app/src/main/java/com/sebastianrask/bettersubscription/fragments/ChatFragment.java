@@ -1137,7 +1137,6 @@ public class ChatFragment extends Fragment implements EmoteKeyboardDelegate, Cha
 						}
 					} else {
 						String emoteUrl = ChatEmoteManager.getEmoteUrl(emoteAtPosition, EMOTE_SIZE);
-
 						if (settings.getSaveEmotes()) {
 							Target target = picassoTargets.containsKey(emoteAtPosition.getEmoteId())
 									? picassoTargets.get(emoteAtPosition.getEmoteId())
@@ -1154,7 +1153,7 @@ public class ChatFragment extends Fragment implements EmoteKeyboardDelegate, Cha
 								}
 
 								@Override
-								public void onBitmapFailed(Drawable errorDrawable) {}
+								public void onBitmapFailed(Exception e, Drawable errorDrawable) {}
 
 								@Override
 								public void onPrepareLoad(Drawable placeHolderDrawable) {}
@@ -1163,10 +1162,11 @@ public class ChatFragment extends Fragment implements EmoteKeyboardDelegate, Cha
 							if (!picassoTargets.containsKey(emoteAtPosition.getEmoteId()))
 								picassoTargets.put(emoteAtPosition.getEmoteId(), target);
 
-							Picasso.with(getContext()).load(emoteUrl).into(target);
+							Picasso.get().load(emoteUrl).into(target);
 						} else {
-							Picasso.with(getContext()).load(emoteUrl).into(holder.mImageEmote);
+							Picasso.get().load(emoteUrl).into(holder.mImageEmote);
 						}
+
 					}
 				}
 			}

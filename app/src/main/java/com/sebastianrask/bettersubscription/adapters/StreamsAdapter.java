@@ -90,8 +90,8 @@ public class StreamsAdapter extends MainActivityAdapter<StreamInfo, StreamViewHo
 			return;
 		}
 
-		boolean deviceHasLollipop = Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP;
 		StreamInfo item = getElements().get(itemPosition);
+		boolean deviceHasLollipop = Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP;
 		Intent intent = LiveStreamActivity.createLiveStreamIntent(item, deviceHasLollipop, getContext());
 
 		if (deviceHasLollipop) {

@@ -856,7 +856,7 @@ public class StreamFragment extends Fragment {
                 return;
             }
 
-            RequestCreator creator = Picasso.with(getContext()).load(imageUrl + "?ts=" +
+            RequestCreator creator = Picasso.get().load(imageUrl + "?ts=" +
                     System.currentTimeMillis());
             Target target = new Target() {
                 @Override
@@ -864,7 +864,7 @@ public class StreamFragment extends Fragment {
                     mPreview.setImageBitmap(bitmap);
                 }
 
-                public void onBitmapFailed(Drawable errorDrawable) {
+                public void onBitmapFailed(Exception e, Drawable errorDrawable) {
                 }
 
                 public void onPrepareLoad(Drawable placeHolderDrawable) {

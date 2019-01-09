@@ -61,7 +61,7 @@ public class PanelAdapter extends RecyclerView.Adapter<PanelAdapter.PanelViewHol
 
 		String imageUrl = mPanel.getmImageUrl();
 		if (imageUrl != null && !imageUrl.isEmpty() && !imageUrl.equals("null")) {
-			Picasso.with(mActivity).load(mPanel.getmImageUrl()).into(holder.mImageView);
+			Picasso.get().load(mPanel.getmImageUrl()).into(holder.mImageView);
 		}
 
 		final String link = mPanel.getmLinkUrl();

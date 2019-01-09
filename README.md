@@ -15,6 +15,8 @@ It differs in these ways:
 - Support global and channel badges (e.g. subscription streaks)
 - Displays sub/resub/gift notices
 - Stream preview refresh works
+- Followed streamer list in navigation drawer
+- Higher API version needed
 
 It is not published on any app stores.
 

@@ -3,6 +3,7 @@ package com.sebastianrask.bettersubscription.fragments;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import androidx.annotation.AnimRes;
@@ -28,7 +29,6 @@ import android.widget.TextView;
 import com.afollestad.materialdialogs.MaterialDialog;
 import com.sebastianrask.bettersubscription.R;
 import com.sebastianrask.bettersubscription.activities.SearchActivity;
-import com.sebastianrask.bettersubscription.activities.UsageTrackingAppCompatActivity;
 import com.sebastianrask.bettersubscription.activities.main.FeaturedStreamsActivity;
 import com.sebastianrask.bettersubscription.activities.main.MainActivity;
 import com.sebastianrask.bettersubscription.activities.main.MyChannelsActivity;
@@ -37,13 +37,22 @@ import com.sebastianrask.bettersubscription.activities.main.MyStreamsActivity;
 import com.sebastianrask.bettersubscription.activities.main.TopGamesActivity;
 import com.sebastianrask.bettersubscription.activities.main.TopStreamsActivity;
 import com.sebastianrask.bettersubscription.activities.settings.SettingsActivity;
+import com.sebastianrask.bettersubscription.adapters.NavigationStreamAdapter;
 import com.sebastianrask.bettersubscription.misc.TooltipWindow;
+import com.sebastianrask.bettersubscription.model.ChannelInfo;
+import com.sebastianrask.bettersubscription.model.StreamInfo;
 import com.sebastianrask.bettersubscription.service.DialogService;
 import com.sebastianrask.bettersubscription.service.Settings;
-import com.sebastianrask.bettersubscription.tasks.GetStreamsCountTask;
+import com.sebastianrask.bettersubscription.tasks.FetchTwitchAPITask;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.net.URL;
 import java.util.List;
 
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 import butterknife.BindView;
 import butterknife.BindViews;
 import butterknife.ButterKnife;
@@ -53,6 +62,9 @@ public class NavigationDrawerFragment extends Fragment {
 
 	private ActionBarDrawerToggle mDrawerToggle;
 	private DrawerLayout mDrawerLayout;
+
+	private NavigationStreamAdapter mAdapter;
+	private RecyclerView mDynamicStreams;
 
 	private Intent  mIntent;
 	private Settings mSettings;
@@ -97,7 +109,14 @@ public class NavigationDrawerFragment extends Fragment {
 		mSettings = new Settings(getActivity());
 
 		initHeaderImage(mTopImage);
-		fetchAndSetOnlineSteamsCount();
+
+		mAdapter = new NavigationStreamAdapter(getActivity());
+		mDynamicStreams = mRoot.findViewById(R.id.dynamic_streams_recyclerview);
+		mDynamicStreams.setLayoutManager(new LinearLayoutManager(getContext()));
+		mDynamicStreams.setAdapter(mAdapter);
+
+		if (mSettings.isLoggedIn())
+			fetchAndSetOnlineSteamsCount();
 
 		return mRoot;
 	}
@@ -119,15 +138,70 @@ public class NavigationDrawerFragment extends Fragment {
 	}
 
 	private void fetchAndSetOnlineSteamsCount() {
-		GetStreamsCountTask getStreamsCountTask = new GetStreamsCountTask(getContext(), new GetStreamsCountTask.Delegate() {
+		mAdapter.clear();
+
+		final String url = Uri.parse("https://api.twitch.tv/kraken/streams/followed")
+				.buildUpon()
+				.appendQueryParameter("oauth_token", mSettings.getGeneralTwitchAccessToken())
+				.appendQueryParameter("stream_type", "live")
+				.appendQueryParameter("offset", "0")
+				.build().toString();
+
+		final FetchTwitchAPITask t = new FetchTwitchAPITask(new FetchTwitchAPITask.Callback() {
 			@Override
-			public void TaskFinished(int count) {
-				if (count >= 0 && mStreamsCountWrapper != null && mStreamsCount != null) {
-					showAndSetStreamCount(count);
+			public void onTaskDone(String result) {
+				try {
+					final JSONObject root = new JSONObject(result);
+					final JSONArray streams = root.getJSONArray("streams");
+
+					showAndSetStreamCount(root.getInt("_total"));
+
+					for (int i = 0; i < streams.length(); i++) {
+						final JSONObject stream = streams.getJSONObject(i);
+						final JSONObject channel = stream.getJSONObject("channel");
+
+						final ChannelInfo ci = new ChannelInfo(
+								channel.getInt("_id"),
+								channel.getString("name"),
+								channel.getString("display_name"),
+								channel.getString("status"),
+								channel.getInt("followers"),
+								channel.getInt("views"),
+								channel.isNull("logo") ? null :
+										new URL(channel.getString("logo")),
+								channel.isNull("video_banner") ? null :
+										new URL(channel.getString("video_banner")),
+								channel.isNull("profile_banner") ? null :
+										new URL(channel.getString("profile_banner"))
+						);
+
+						final JSONObject previewsJSON = stream.getJSONObject("preview");
+						final String[] previews = new String[]{
+								previewsJSON.getString("small"),
+								previewsJSON.getString("medium"),
+								previewsJSON.getString("large")
+						};
+
+						final StreamInfo si = new StreamInfo(
+								ci,
+								stream.getString("game"),
+								stream.getInt("viewers"),
+								previews,
+								0,
+								ci.getStreamDescription()
+						);
+
+						mAdapter.add(si);
+					}
+
+				} catch(Exception e) {
+					Log.d(LOG_TAG, "Failed to fetch current streams", e);
+				} finally {
+					mAdapter.notifyDataSetChanged();
 				}
 			}
 		});
-		getStreamsCountTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+		t.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, url);
 	}
 
 	private void showAndSetStreamCount(int count) {
@@ -152,6 +226,7 @@ public class NavigationDrawerFragment extends Fragment {
 				super.onDrawerOpened(drawerView);
 				mAppIcon.startAnimation(AnimationUtils.loadAnimation(getActivity(), R.anim.anim_icon_rotation));
 				checkForTip(mSettings, mAppTitleView);
+				fetchAndSetOnlineSteamsCount();
 			}
 
 			@Override

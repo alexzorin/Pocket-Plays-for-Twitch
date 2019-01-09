@@ -21,7 +21,7 @@ allprojects {
 
 ext {
     compileSdkVersion = 28
-    minSdkVersion = 16
+    minSdkVersion = 19
     targetSdkVersion = 28
     androidXVersion = '1.0.0-rc02'
 }

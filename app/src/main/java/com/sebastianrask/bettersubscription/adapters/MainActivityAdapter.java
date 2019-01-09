@@ -144,7 +144,7 @@ public abstract class MainActivityAdapter<E extends Comparable<E> & MainElement,
 	protected void loadImagePreview(String previewURL, E element, final ElementsViewHolder viewHolder) {
 		if(previewURL != null && !previewURL.isEmpty()) {
 			RequestCreator creator =
-					Picasso.with(context)
+					Picasso.get()
 							.load(previewURL + "?ts=" + System.currentTimeMillis())
 							.placeholder(ContextCompat.getDrawable(context, element.getPlaceHolder(getContext())));
 
@@ -157,7 +157,6 @@ public abstract class MainActivityAdapter<E extends Comparable<E> & MainElement,
 
 				@Override
 				public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom from) {
-					Log.d(LOG_TAG, "onBitmapLoaded, loaded=" + loaded);
 					if(!loaded) {
 						loaded = true;
 
@@ -171,7 +170,7 @@ public abstract class MainActivityAdapter<E extends Comparable<E> & MainElement,
 				}
 
 				@Override
-				public void onBitmapFailed(Drawable errorDrawable) {
+				public void onBitmapFailed(Exception e, Drawable errorDrawable) {
 
 				}
 

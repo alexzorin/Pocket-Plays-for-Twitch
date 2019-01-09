@@ -190,6 +190,13 @@
         <item name="android:paddingRight">2dp</item>
     </style>
 
+    <style name="icon_navigation_drawer_stream">
+        <item name="android:layout_height">@dimen/navigation_drawer_icon_size</item>
+        <item name="android:layout_width">@dimen/navigation_drawer_icon_size</item>
+        <item name="android:layout_marginLeft">@dimen/navigation_drawer_icon_left_margin</item>
+        <item name="android:layout_centerVertical">true</item>
+    </style>
+
     <!-- Text Style for Navigation drawer's title -->
     <style name="text_style_navigation_drawer_title">
         <item name="android:fontFamily">@string/font_roboto_regular</item>
