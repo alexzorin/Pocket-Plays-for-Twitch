@@ -77,7 +77,7 @@ public class GetTwitchEmotesTask extends AsyncTask<Void, Void, Void> {
 					twitchEmotes.add(new Emote(emoteId, key, false));
 				}
 			}
-		} catch (JSONException e) {
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		Collections.sort(twitchEmotes);

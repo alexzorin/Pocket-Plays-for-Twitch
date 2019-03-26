@@ -84,33 +84,44 @@ public class GetLiveStreamURL extends AsyncTask<String, Void, HashMap<String, St
 
 	@Override
 	protected HashMap<String, String> doInBackground(String... params) {
-		String streamerName = params[0];
+		final String streamerName = params[0];
+		final String oauthToken = params[1];
 		String sig = "";
 		String tokenString = "";
 
-		String resultString = Service.urlToJSONString("https://api.twitch.tv/api/channels/" + streamerName + "/access_token");
 		try {
-			JSONObject resultJSON = new JSONObject(resultString);
+			final String accessTokenUrl = Uri.parse("https://api.twitch.tv/api/channels/" + streamerName + "/access_token")
+					.buildUpon()
+					.appendQueryParameter("need_https", "true")
+					.appendQueryParameter("platform", "web")
+					.appendQueryParameter("player_backend", "mediaplayer")
+					.appendQueryParameter("oauth_token", oauthToken)
+					.build().toString();
+			JSONObject resultJSON = new JSONObject(Service.urlToJSONString(accessTokenUrl));
 			tokenString = resultJSON.getString("token").replaceAll("\\\\", ""); // Remove all backslashes from the returned string. We need the string to make a jsonobject
 			sig = resultJSON.getString("sig");
 
-			Log.d("ACCESS_TOKEN_STRING", tokenString);
+			Log.d(LOG_TAG, "Token: " + tokenString);
+			Log.d(LOG_TAG, "URI:" + accessTokenUrl);
+			Log.d(LOG_TAG, "Our token: " + oauthToken);
 		} catch (JSONException e) {
 			e.printStackTrace();
 		}
 
-		final String streamUrl = Uri.parse(String.format("http://usher.twitch.tv/api/channel/hls/%s.m3u8", streamerName))
+		final String streamUrl = Uri.parse(String.format("https://usher.ttvnw.net/api/channel/hls/%s.m3u8", streamerName))
 				.buildUpon()
 				.appendQueryParameter("player", "twitchweb")
 				.appendQueryParameter("token", tokenString)
 				.appendQueryParameter("sig", sig)
-				.appendQueryParameter("allow_audio_only", "true")
+				.appendQueryParameter("allow_audio_only", "false")
 				.appendQueryParameter("allow_source", "true")
 				.appendQueryParameter("type", "any")
 				.appendQueryParameter("p", String.valueOf(new Random().nextInt(6)))
+				.appendQueryParameter("fast_bread", "true")
+				.appendQueryParameter("cdm", "wv")
+				.appendQueryParameter("rtqos", "control")
 				.build().toString();
 
-		Log.d(LOG_TAG, "HSL Playlist URL: " + streamUrl);
 		return parseM3U8(streamUrl);
 	}
 
@@ -165,7 +176,7 @@ public class GetLiveStreamURL extends AsyncTask<String, Void, HashMap<String, St
 		ArrayList<String> qualitiesAvailable = new ArrayList<>(Arrays.asList(QUALITIES));
 		qualitiesAvailable.addAll(new ArrayList<>(Arrays.asList(NEW_QUALITIES)));
 		for(String quality : qualitiesAvailable) {
-			Pattern p = Pattern.compile("VIDEO=\"" + quality + "\"\\n(http:\\/\\/\\S+)");
+			Pattern p = Pattern.compile("VIDEO=\"" + quality + "\".*\\n(https:\\/\\/\\S+)");
 			Matcher m = p.matcher(result.toString());
 
 			if(m.find()) {

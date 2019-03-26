@@ -17,6 +17,7 @@ It differs in these ways:
 - Stream preview refresh works
 - Followed streamer list in navigation drawer
 - Higher API version needed
+- Uses [ExoPlayer](https://google.github.io/ExoPlayer/) video player instead of default Android one, which will control over whether ads are played.
 
 It is not published on any app stores.
 
